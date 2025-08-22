@@ -1,8 +1,6 @@
 import { adminAuth } from '@/lib/firebase-admin-config';
-import { getAuth } from 'firebase/auth';
 import { NextResponse } from 'next/server';
 
-// This is a protected API route that can only be called by server-side code
 export async function POST(request) {
   try {
     const { uid, isAdmin } = await request.json();
@@ -14,14 +12,12 @@ export async function POST(request) {
       );
     }
 
-    // Set custom claims
     await adminAuth.setCustomUserClaims(uid, { admin: isAdmin !== false });
     
     return NextResponse.json({
       success: true,
       message: `Successfully ${isAdmin ? 'granted' : 'revoked'} admin privileges`
     });
-    
   } catch (error) {
     console.error('Error setting admin claim:', error);
     return NextResponse.json(
