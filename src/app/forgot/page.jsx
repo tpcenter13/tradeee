@@ -1,37 +1,25 @@
 "use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
-import { initializeApp } from 'firebase/app';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import Link from 'next/link';
-import Head from 'next/head';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase"; // ✅ use shared Firebase instance
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import Link from "next/link";
+import Head from "next/head";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       await sendPasswordResetEmail(auth, email);
@@ -39,7 +27,7 @@ export default function ForgotPasswordPage() {
     } catch (error) {
       console.error("Password reset error:", error);
       let errorMessage = "Failed to send reset email. Please try again.";
-      
+
       switch (error.code) {
         case "auth/invalid-email":
           errorMessage = "Invalid email address";
@@ -53,7 +41,7 @@ export default function ForgotPasswordPage() {
         default:
           errorMessage = error.message || "An unexpected error occurred";
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -65,66 +53,76 @@ export default function ForgotPasswordPage() {
       <Head>
         <title>TradeConnect - Forgot Password</title>
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+          rel="stylesheet"
+        />
       </Head>
 
       <div className="container">
         <div className="left-section">
           <div className="logo-container">
             <div className="logo">
-              <img 
-                src="/logo.png" 
+              <img
+                src="/logo.png"
                 alt="TradeConnect Logo"
                 onError={(e) => {
-                  e.target.src = '/fallback-logo.png';
+                  e.target.src = "/fallback-logo.png";
                   e.target.onerror = null;
                 }}
               />
             </div>
             <div className="app-title">TradeConnect</div>
             {success ? (
-              <div className="description">Help Is on the Way 💌 We've sent a gentle little reset link to your inbox. Just follow the steps and you'll be back in soon.</div>
+              <div className="description">
+                Help Is on the Way 💌 We've sent a gentle little reset link to
+                your inbox. Just follow the steps and you'll be back in soon.
+              </div>
             ) : (
-              <div className="description">Trade, Buy & Sell Within Barangay Bulihan, Silang Cavite</div>
+              <div className="description">
+                Trade, Buy & Sell Within Barangay Bulihan, Silang Cavite
+              </div>
             )}
           </div>
         </div>
 
         <div className="right-section">
           <h2>Forgot Password</h2>
-          
+
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
 
           {!success ? (
-            <form onSubmit={handleResetPassword} suppressHydrationWarning>
+            <form onSubmit={handleResetPassword}>
               <div className="input-group">
                 <i className="fas fa-envelope"></i>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email" 
-                  required 
-                  suppressHydrationWarning
+                  placeholder="Enter your email"
+                  required
                 />
               </div>
 
-              <button type="submit" disabled={loading} suppressHydrationWarning>
+              <button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <span className="loading-spinner"></span> Sending...
                   </>
                 ) : (
-                  'Send Email'
+                  "Send Email"
                 )}
               </button>
             </form>
           ) : (
             <div className="success-actions">
-              <button onClick={() => router.push('/login')}>
+              <button onClick={() => router.push("/login")}>
                 Back to Login
               </button>
             </div>
@@ -138,6 +136,7 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
+      {/* ✅ keep your CSS exactly as you had it */}
       <style jsx global>{`
         :root {
           --primary: #4a6fa5;
@@ -148,14 +147,12 @@ export default function ForgotPasswordPage() {
           --dark-gray: #333;
           --link-blue: #1a73e8;
         }
-        
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
           font-family: "Open Sans", sans-serif;
         }
-
         body {
           background-color: var(--light-gray);
           display: flex;
@@ -164,7 +161,6 @@ export default function ForgotPasswordPage() {
           min-height: 100vh;
           padding: 20px;
         }
-
         .container {
           display: flex;
           max-width: 900px;
@@ -175,7 +171,6 @@ export default function ForgotPasswordPage() {
           overflow: hidden;
           flex-wrap: wrap;
         }
-
         .left-section {
           flex: 1;
           min-width: 300px;
@@ -188,14 +183,12 @@ export default function ForgotPasswordPage() {
           text-align: center;
           color: white;
         }
-
         .logo-container {
           display: flex;
           flex-direction: column;
           align-items: center;
           margin-bottom: 15px;
         }
-
         .logo {
           width: 70px;
           height: 70px;
@@ -207,45 +200,38 @@ export default function ForgotPasswordPage() {
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
           margin-bottom: 10px;
         }
-
         .logo img {
           width: 50px;
           height: 50px;
           object-fit: contain;
           animation: spinAndScale 3s linear infinite;
         }
-
         .app-title {
           font-size: 24px;
           font-weight: bold;
           margin-bottom: 8px;
         }
-
         .description {
           font-size: 14px;
           line-height: 1.4;
           max-width: 280px;
         }
-
         .right-section {
           flex: 1;
           min-width: 300px;
           padding: 40px 30px;
           color: var(--dark-gray);
         }
-
         .right-section h2 {
           text-align: center;
           margin-bottom: 20px;
           font-size: 22px;
           color: var(--secondary);
         }
-
         .input-group {
           position: relative;
           margin-bottom: 20px;
         }
-
         .input-group i:first-child {
           position: absolute;
           left: 15px;
@@ -253,7 +239,6 @@ export default function ForgotPasswordPage() {
           transform: translateY(-50%);
           color: #777;
         }
-
         .input-group input {
           width: 100%;
           padding: 10px 40px 10px 40px;
@@ -262,13 +247,11 @@ export default function ForgotPasswordPage() {
           font-size: 14px;
           transition: all 0.3s;
         }
-
         .input-group input:focus {
           border-color: var(--primary);
           outline: none;
           box-shadow: 0 0 5px rgba(74, 111, 165, 0.5);
         }
-
         button {
           width: 100%;
           padding: 10px;
@@ -281,34 +264,28 @@ export default function ForgotPasswordPage() {
           cursor: pointer;
           transition: 0.3s ease;
         }
-
         button:hover {
           opacity: 0.9;
           transform: translateY(-2px);
         }
-
         button:disabled {
           background: #cccccc;
           cursor: not-allowed;
           transform: none;
         }
-
         .remembered-password {
           text-align: center;
           margin-top: 15px;
           color: #777;
           font-size: 14px;
         }
-
         .remembered-password a {
           color: var(--primary);
           text-decoration: none;
         }
-
         .remembered-password a:hover {
           text-decoration: underline;
         }
-
         .error-message {
           color: var(--error);
           font-size: 14px;
@@ -318,7 +295,6 @@ export default function ForgotPasswordPage() {
           background-color: rgba(231, 76, 60, 0.1);
           border-radius: 5px;
         }
-
         .success-message {
           color: var(--success);
           font-size: 14px;
@@ -328,38 +304,40 @@ export default function ForgotPasswordPage() {
           background-color: rgba(46, 204, 113, 0.1);
           border-radius: 5px;
         }
-
         .success-actions {
           margin-top: 20px;
         }
-
         .loading-spinner {
           display: inline-block;
           width: 16px;
           height: 16px;
-          border: 2px solid rgba(255,255,255,.3);
+          border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
           border-top-color: #fff;
           animation: spin 1s ease-in-out infinite;
           margin-right: 6px;
           vertical-align: middle;
         }
-
         @keyframes spinAndScale {
-          0% { transform: rotate(0deg) scale(1); }
-          50% { transform: rotate(180deg) scale(1.1); }
-          100% { transform: rotate(360deg) scale(1); }
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+          50% {
+            transform: rotate(180deg) scale(1.1);
+          }
+          100% {
+            transform: rotate(360deg) scale(1);
+          }
         }
-
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          to {
+            transform: rotate(360deg);
+          }
         }
-
         @media (max-width: 768px) {
           .container {
             flex-direction: column;
           }
-
           .left-section,
           .right-section {
             padding: 25px;
