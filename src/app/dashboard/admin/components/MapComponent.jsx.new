@@ -1,0 +1,220 @@
+'use client';
+
+import dynamic from 'next/dynamic';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// Fix for default marker icons in Next.js
+if (typeof window !== 'undefined') {
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: '/marker-icon-2x.png',
+    iconUrl: '/marker-icon.png',
+    shadowUrl: '/marker-shadow.png',
+  });
+}
+
+// Map configuration
+const BULIHAN_CENTER = [14.2417, 120.9715];
+const BULIHAN_BOUNDS = [
+  [14.2317, 120.9615],
+  [14.2517, 120.9815]
+];
+
+// Create a separate component to avoid issues with dynamic imports and hooks
+const MapComponentInner = ({
+  users = [],
+  onUserClick,
+  showZones = true,
+  zoneBoundaries = {},
+  onMapReady,
+  onBoundsChange,
+  center,
+  selectedUser
+}) => {
+  const mapRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+  const { MapContainer, TileLayer, ZoomControl, Tooltip, CircleMarker, Polygon } = require('react-leaflet');
+
+  // Handle map initialization
+  const handleMapReady = useCallback((map) => {
+    if (mapRef.current) {
+      mapRef.current.off();
+      mapRef.current.remove();
+    }
+    
+    mapRef.current = map;
+    map.setView(BULIHAN_CENTER, 15);
+    
+    // Set bounds and zoom constraints
+    const bounds = L.latLngBounds(BULIHAN_BOUNDS);
+    map.setMaxBounds(bounds);
+    map.setMinZoom(14);
+    map.setMaxZoom(18);
+    
+    // Handle map drag to keep within bounds
+    const handleDrag = () => {
+      map.panInsideBounds(bounds, { animate: false });
+    };
+    
+    map.on('drag', handleDrag);
+    
+    return () => {
+      if (map) {
+        map.off('drag', handleDrag);
+        if (map.remove) {
+          map.remove();
+        }
+      }
+    };
+  }, []);
+  
+  // Handle marker click
+  const handleMarkerClick = useCallback((user) => (e) => {
+    if (onUserClick) onUserClick(user);
+    if (e?.target?.openPopup) {
+      e.target.openPopup();
+    }
+  }, [onUserClick]);
+
+  // Handle map move end to update bounds
+  const handleMoveEnd = useCallback(() => {
+    if (mapRef.current && onBoundsChange) {
+      onBoundsChange(mapRef.current.getBounds());
+    }
+  }, [onBoundsChange]);
+
+  // Update map when center changes
+  useEffect(() => {
+    if (mapRef.current && center) {
+      mapRef.current.flyTo(center, 16);
+    }
+  }, [center]);
+
+  // Handle map ready
+  useEffect(() => {
+    if (mapRef.current && onMapReady) {
+      onMapReady(mapRef.current);
+    }
+  }, [onMapReady]);
+
+  // Pan to selected user
+  useEffect(() => {
+    if (selectedUser && mapRef.current) {
+      const user = users.find(u => u.id === selectedUser.id);
+      if (user?.coordinates) {
+        mapRef.current.flyTo(user.coordinates, 16, {
+          duration: 1,
+          animate: true,
+        });
+      }
+    }
+  }, [selectedUser, users]);
+
+  // Set mounted state when component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gray-100">
+        Loading map...
+      </div>
+    );
+  }
+
+  return (
+    <div className="map-container" style={{ height: '100%', width: '100%' }}>
+      <MapContainer
+        center={center || BULIHAN_CENTER}
+        zoom={15}
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
+        whenCreated={handleMapReady}
+        onMoveEnd={handleMoveEnd}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        
+        {/* Zone boundaries */}
+        {showZones && Object.entries(zoneBoundaries).map(([zone, data]) => (
+          data?.bounds?.length >= 3 && (
+            <Polygon
+              key={zone}
+              positions={data.bounds}
+              color={data.color || '#3b82f6'}
+              fillOpacity={0.1}
+              weight={2}
+            >
+              <Tooltip direction="center" permanent>
+                {zone}
+              </Tooltip>
+            </Polygon>
+          )
+        ))}
+        
+        {/* User markers */}
+        {users.map((user) => {
+          if (!user.coordinates?.length === 2) return null;
+          
+          const isSelected = selectedUser?.id === user.id;
+          const zoneColor = zoneBoundaries[user.zone]?.color || '#3b82f6';
+          
+          return (
+            <CircleMarker
+              key={user.id}
+              center={user.coordinates}
+              radius={isSelected ? 10 : 8}
+              fillColor={zoneColor}
+              color="#fff"
+              weight={isSelected ? 3 : 1}
+              fillOpacity={0.8}
+              eventHandlers={{
+                click: handleMarkerClick(user)
+              }}
+            >
+              <Tooltip>
+                <div className="user-tooltip">
+                  <div className="user-tooltip-header">
+                    <strong>{user.name}</strong>
+                    <span className={`status-badge ${user.status}`}>
+                      {user.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="user-tooltip-details">
+                    <div>{user.zone}</div>
+                    <div>{user.contact}</div>
+                    {user.isOutOfZone && (
+                      <div className="out-of-zone">Out of Zone</div>
+                    )}
+                  </div>
+                </div>
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
+        
+        <ZoomControl position="bottomright" />
+      </MapContainer>
+    </div>
+  );
+};
+
+// Create the dynamic component with SSR disabled
+const MapComponent = dynamic(
+  () => Promise.resolve(MapComponentInner),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full flex items-center justify-center bg-gray-100">
+        Loading map...
+      </div>
+    )
+  }
+);
+
+export default MapComponent;

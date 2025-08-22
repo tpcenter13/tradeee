@@ -1,0 +1,17 @@
+.chartContainer {
+  width: 50%;
+  height: 50%;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chartFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: #666;
+  padding: 0 0.5rem;
+}

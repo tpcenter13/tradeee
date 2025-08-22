@@ -1,0 +1,147 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Admin access function
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // USER PROFILES
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow admins to read all users in a query
+      match /{document=**} {
+        allow read: if isAdmin();
+      }
+    }
+
+    // MARKETPLACE ITEMS
+    match /marketplaceItems/{itemId} {
+      allow read: if request.auth != null || isAdmin();
+
+      allow create: if (request.auth != null && request.resource.data.userId == request.auth.uid || isAdmin())
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.price is number
+        && request.resource.data.isAvailable is bool
+        && request.resource.data.isSelling is bool
+        && request.resource.data.quantity is number
+        && request.resource.data.category is string
+        && (!('tradeFor' in request.resource.data) || request.resource.data.tradeFor is string)
+        && (!('nickname' in request.resource.data) || request.resource.data.nickname is string)
+        && (!('zone' in request.resource.data) || request.resource.data.zone is string)
+        && request.resource.data.images is list
+        && request.resource.data.images.hasOnly([string])
+        && request.resource.data.images.size() <= 10;
+
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
+    // TRADE REQUESTS
+    match /tradeRequests/{requestId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == resource.data.requesterId 
+            || request.auth.uid == resource.data.ownerId
+            || isAdmin());
+
+      allow create: if request.auth != null
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.ownerId is string
+        && request.resource.data.itemId is string
+        && request.resource.data.tradeForItemId is string
+        && request.resource.data.status in ['pending', 'accepted', 'declined']
+        && request.resource.data.createdAt is timestamp;
+
+      allow update, delete: if (request.auth != null
+        && (request.auth.uid == resource.data.ownerId 
+            || request.auth.uid == resource.data.requesterId))
+        || isAdmin();
+    }
+
+    // FORUM POSTS
+    match /forumPosts/{postId} {
+      allow read: if request.auth != null || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.content is string
+        && (!('nickname' in request.resource.data) || request.resource.data.nickname is string)
+        && (!('zone' in request.resource.data) || request.resource.data.zone is string);
+
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
+    // COMMENTS
+    match /comments/{commentId} {
+      allow read: if request.auth != null || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.content is string
+        && (!('nickname' in request.resource.data) || request.resource.data.nickname is string)
+        && (!('parentCommentId' in request.resource.data) || request.resource.data.parentCommentId is string || request.resource.data.parentCommentId == null)
+        && request.resource.data.createdAt is timestamp;
+
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
+    // LIKES
+    match /likes/{likeId} {
+      allow read: if request.auth != null || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.targetId is string
+        && request.resource.data.targetType in ['post', 'comment', 'item'];
+
+      allow delete: if (request.auth != null && request.auth.uid == resource.data.userId) || isAdmin();
+    }
+
+    // MESSAGES
+    match /messages/{messageId} {
+      allow read: if request.auth != null 
+        && (request.auth.uid == resource.data.senderId 
+            || request.auth.uid == resource.data.receiverId
+            || isAdmin());
+
+      allow create: if request.auth != null 
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.receiverId is string
+        && request.resource.data.text is string
+        && request.resource.data.timestamp is timestamp;
+    }
+
+    // NOTIFICATIONS
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == userId
+        && request.resource.data.message is string
+        && request.resource.data.read is bool
+        && request.resource.data.createdAt is timestamp;
+
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.read == true
+        && resource.data.read == false;
+    }
+
+    // ORDERS
+    match /orders/{orderId} {
+      allow read: if (request.auth != null && request.auth.uid == resource.data.buyerId) || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.itemId is string
+        && request.resource.data.purchaseDate is timestamp;
+    }
+  }
+}

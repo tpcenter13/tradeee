@@ -1,0 +1,3 @@
+[submodule "tradeconnect"]
+	path = tradeconnect
+	url = https://github.com/username/tradeconnect.git

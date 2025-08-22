@@ -1,0 +1,146 @@
+.container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.categoriesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.categoryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.categoryIconContainer {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+}
+
+.categoryIcon {
+  font-size: 1rem;
+}
+
+.categoryName {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.categorySales {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  min-width: 60px;
+  text-align: right;
+}
+
+.progressBar {
+  height: 8px;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.25rem 0;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.categoryFooter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.changeBadge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.positive {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.negative {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  
+  .title {
+    color: #f9fafb;
+  }
+  
+  .categoryIconContainer {
+    background-color: #374151;
+  }
+  
+  .categoryName {
+    color: #e5e7eb;
+  }
+  
+  .categorySales {
+    color: #f9fafb;
+  }
+  
+  .progressBar {
+    background-color: #374151;
+  }
+  
+  .positive {
+    background-color: #064e3b;
+    color: #6ee7b7;
+  }
+  
+  .negative {
+    background-color: #7f1d1d;
+    color: #fca5a5;
+  }
+}

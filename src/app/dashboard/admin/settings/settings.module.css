@@ -1,0 +1,378 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 120px; /* Add top padding to account for fixed navbar */
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Ensure content is not hidden behind fixed header */
+.mainWrapper {
+  margin-top: 0;
+  padding-top: 1rem;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #f5f3ff;
+}
+
+.backIcon {
+  font-size: 0.875rem;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0.5rem 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.settingsContainer {
+  display: flex;
+  gap: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: 250px;
+  background-color: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  padding: 1.5rem 0;
+}
+
+.tabButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  color: #4b5563;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.tabButton:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.tabButton.active {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border-right: 3px solid #4f46e5;
+}
+
+.tabIcon {
+  margin-right: 0.75rem;
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+/* Content Styles */
+.content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.sectionIcon {
+  margin-right: 0.75rem;
+  color: #4f46e5;
+}
+
+/* Form Styles */
+.form {
+  max-width: 600px;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9375rem;
+}
+
+.input, .select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.disabledInput {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.primaryButton {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primaryButton:hover {
+  background-color: #4338ca;
+}
+
+/* Toggle Switch */
+.toggleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.toggleItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.toggleItem:hover {
+  background-color: #f3f4f6;
+}
+
+.toggleTitle {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.toggleDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  margin-left: 1rem;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #4f46e5;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #4f46e5;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .settingsContainer {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .content {
+    padding: 1.5rem;
+  }
+}
+
+/* Dark Mode Styles */
+/* Dark mode styles for back button */
+@media (prefers-color-scheme: dark) {
+  .backButton {
+    color: #818cf8;
+  }
+  
+  .backButton:hover {
+    background-color: #2e2e4a;
+  }
+  .pageTitle {
+    color: #f3f4f6;
+    border-bottom-color: #374151;
+  }
+  
+  .settingsContainer {
+    background-color: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sidebar {
+    background-color: #111827;
+    border-color: #374151;
+  }
+  
+  .tabButton {
+    color: #d1d5db;
+  }
+  
+  .tabButton:hover {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .tabButton.active {
+    background-color: #1e1b4b;
+    color: #818cf8;
+    border-right-color: #818cf8;
+  }
+  
+  .sectionTitle {
+    color: #f9fafb;
+  }
+  
+  .formGroup label {
+    color: #e5e7eb;
+  }
+  
+  .input, .select {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .input:focus, .select:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+  }
+  
+  .disabledInput {
+    background-color: #1f2937;
+    color: #9ca3af;
+  }
+  
+  .toggleItem {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+  }
+  
+  .toggleItem:hover {
+    background-color: #1f2937;
+  }
+  
+  .toggleTitle {
+    color: #f3f4f6;
+  }
+  
+  .toggleDescription {
+    color: #9ca3af;
+  }
+  
+  .slider {
+    background-color: #4b5563;
+  }
+  
+  input:checked + .slider {
+    background-color: #6366f1;
+  }
+}
