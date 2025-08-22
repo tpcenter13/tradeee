@@ -16,9 +16,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+console.log("Firebase Config:", firebaseConfig);
+console.log("Existing apps:", getApps());
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const realtimeDb = getDatabase(app);
-export const storage = getStorage(app);
+let app;
+try {
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  console.log("Firebase app initialized:", app.name);
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
+
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const realtimeDb = app ? getDatabase(app) : null;
+export const storage = app ? getStorage(app) : null;
+
+console.log("Auth instance:", auth);
