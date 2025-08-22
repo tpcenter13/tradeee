@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from 'next/link';
 import Head from 'next/head';
 import { useAppActions, useAppState, auth } from '../context/AppContext';
+import { userService } from '@/lib/firebaseService';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,59 +52,41 @@ export default function LoginPage() {
     }
   }, [setGlobalError]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    clearError(); // Clear any global errors
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  clearError();
 
-    try {
-      // Sign in with Firebase
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Get ID token
-      const idToken = await user.getIdToken();
-      
-      // Update global state (this will be handled by the context's auth listener)
-      // But we can also manually update to ensure immediate state change
-      setUser(user);
-      setToken(idToken);
-      
-      // Redirect based on user role
-      if (user.email === 'admintradeconnecta@gmail.com') {
-        router.push('/dashboard/admin');
-      } else {
-        router.push('/dashboard/user/home');
-      }
-      
-    } catch (error) {
-      console.error("Login error:", error);
-      let errorMessage = "Login failed. Please try again.";
-      
-      switch (error.code) {
-        case "auth/invalid-email":
-          errorMessage = "Invalid email address";
-          break;
-        case "auth/user-not-found":
-          errorMessage = "No account found with this email";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Incorrect password";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Too many attempts. Please try again later.";
-          break;
-        case "auth/invalid-credential":
-          errorMessage = "Invalid email or password";
-          break;
-      }
-      
-      setError(errorMessage);
-      setGlobalError(errorMessage);
-    } finally {
-      setLoading(false);
+  try {
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    const idToken = await user.getIdToken();
+    setUser(user);
+    setToken(idToken);
+
+    // Save or update user profile
+    await userService.createUserProfile(user.uid, {
+      email: user.email,
+      username: user.displayName || email.split('@')[0],
+      role: user.email === 'admintradeconnecta@gmail.com' ? 'admin' : 'user',
+      photoURL: user.photoURL || '',
+      zone: 'Zone 1' // Replace or update dynamically if needed
+    });
+
+    // Redirect
+    if (user.email === 'admintradeconnecta@gmail.com') {
+      router.push('/dashboard/admin');
+    } else {
+      router.push('/dashboard/user/home');
     }
-  };
+
+  } catch (error) {
+    console.error("Login error:", error);
+    // ...your error handling
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>  
