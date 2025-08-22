@@ -1,4 +1,5 @@
-import Navbar from '../components/Navbar';
+
+import Navbar from '@/components/navbar';
 import '../styles/globals.css'; // kung nasa src/styles
 
 
@@ -11,7 +12,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <Navbar />
+        <Navbar/>
         <main>{children}</main>
       </body>
     </html>
