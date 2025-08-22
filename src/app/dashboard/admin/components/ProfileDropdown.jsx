@@ -3,53 +3,33 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { FaUser, FaCog, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
+import { getAuth, signOut } from 'firebase/auth'; // ✅ Firebase logout
 import styles from './ProfileDropdown.module.css';
 
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
   const handleLogout = async () => {
     try {
-      // Call your logout API endpoint if you have one
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        // Clear any client-side auth state
-        localStorage.removeItem('adminToken');
-        
-        // Redirect to home page
-        window.location.href = '/login';
-      } else {
-        console.error('Logout failed');
-        // Still redirect to home even if API call fails
-        window.location.href = '/login';
-      }
+      const auth = getAuth();
+      await signOut(auth); // ✅ Logs out from Firebase
+      localStorage.removeItem('adminToken');
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still redirect to home even if there's an error
       window.location.href = '/login';
     }
   };

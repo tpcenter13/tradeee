@@ -1,58 +1,46 @@
-const express = require("express");
-const cors = require("cors");
-const admin = require("firebase-admin");
-const { initializeApp, cert } = require("firebase-admin/app");
-const { getAuth } = require("firebase-admin/auth");
-const { getFirestore } = require("firebase-admin/firestore");
+// src/app/api/signup/route.js
+import { NextResponse } from "next/server";
+import { auth, db } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
-const serviceAccount = require("./serviceAccountKey.json"); // Replace with your Firebase service account key
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-initializeApp({
-  credential: cert(serviceAccount),
-});
-
-const db = getFirestore();
-const auth = getAuth();
-
-app.post("/api/signup", async (req, res) => {
-  const { username, email, zone, password, role, photoURL } = req.body;
-
+export async function POST(req) {
   try {
-    // Check if email already exists
-    const signInMethods = await auth.fetchSignInMethodsForEmail(email);
-    if (signInMethods.length > 0) {
-      return res.status(400).json({ message: "Email already in use" });
+    const body = await req.json();
+    const { username, email, zone, password, role, photoURL } = body;
+
+    if (!email || !password || !username) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    // Create user in Firebase Auth
-    const userRecord = await auth.createUser({
-      email,
-      password,
+    // Create user with Firebase Auth (client SDK)
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    // Update display name / photo
+    await updateProfile(userCredential.user, {
       displayName: username,
+      photoURL: photoURL || null,
     });
 
-    // Save user data to Firestore
-    await db.collection("users").doc(userRecord.uid).set({
+    // Save user data in Firestore
+    await setDoc(doc(db, "users", userCredential.user.uid), {
       username,
       email,
       zone,
       role,
-      photoURL,
-      createdAt: new Date().toISOString(),
+      photoURL: photoURL || null,
+      createdAt: serverTimestamp(),
     });
 
-    res.status(201).json({ message: "User created successfully", uid: userRecord.uid });
+    return NextResponse.json({
+      message: "User created successfully",
+      uid: userCredential.user.uid,
+    });
   } catch (error) {
     console.error("Signup error:", error);
-    res.status(500).json({ message: error.message || "Internal server error" });
+    return NextResponse.json(
+      { message: error.message || "Internal server error" },
+      { status: 500 }
+    );
   }
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+}
