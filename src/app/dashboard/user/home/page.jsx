@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HomeFeed() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,44 +19,41 @@ export default function HomeFeed() {
     "Health & Beauty",
   ];
 
-  // Fetch products from API
   const fetchProducts = async (category = null) => {
     try {
       setLoading(true);
-      const url = category && category !== "All Items" 
-        ? `/api/posts?category=${encodeURIComponent(category)}`
-        : '/api/posts';
-      
+      const url =
+        category && category !== "All Items"
+          ? `/api/posts?category=${encodeURIComponent(category)}`
+          : "/api/posts";
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch products');
+        throw new Error("Failed to fetch products");
       }
-      
+
       const data = await response.json();
       setProducts(data);
       setError(null);
     } catch (error) {
-      console.error('Error fetching products:', error);
-      setError('Failed to load products');
+      console.error("Error fetching products:", error);
+      setError("Failed to load products");
       setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch products on component mount and when category changes
   useEffect(() => {
     fetchProducts(activeCategory);
   }, [activeCategory]);
 
-  // Helper function to format date
   const formatDate = (date) => {
     const d = new Date(date);
     return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
   };
 
-  // Helper function to format price
   const formatPrice = (product) => {
     if (product.isSelling && product.price) {
       return `₱${parseFloat(product.price).toFixed(2)}`;
@@ -62,13 +61,10 @@ export default function HomeFeed() {
     return "For Trade";
   };
 
-  // Helper function to get display location (using seller info)
   const getDisplayLocation = (seller) => {
-    // You might want to add location field to your seller object
     return seller?.email || "Unknown Location";
   };
 
-  // Helper function to get seller initial
   const getSellerInitial = (seller) => {
     if (seller?.email) {
       return seller.email.charAt(0).toUpperCase();
@@ -83,17 +79,24 @@ export default function HomeFeed() {
     setActiveCategory(category);
   };
 
+  const handleBuyTradeClick = (product) => {
+    // Create a message with product details
+    const message = `Hi, I'm interested in your ${product.title} (${product.isSelling ? 'For Sale' : 'For Trade'})`;
+    
+    // Get seller email
+    const sellerEmail = product.seller?.email || "Unknown Seller";
+    
+    // Navigate to messages page with product info as query params
+    router.push(`/dashboard/user/messages?product=${encodeURIComponent(product.title)}&message=${encodeURIComponent(message)}&sellerEmail=${encodeURIComponent(sellerEmail)}&productId=${product.id}&price=${product.price}&image=${product.images[0]}&isSelling=${product.isSelling}`);
+  };
+
   if (loading) {
     return (
-      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "5px" }}>
-          Home Feed
-        </h2>
-        <p style={{ color: "#555", fontSize: "14px", marginBottom: "20px" }}>
-          Loading products...
-        </p>
-        <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
-          <div style={{ fontSize: "18px", color: "#666" }}>Loading...</div>
+      <div className="p-5 font-sans">
+        <h2 className="text-[22px] font-bold mb-1">Home Feed</h2>
+        <p className="text-gray-600 text-sm mb-5">Loading products...</p>
+        <div className="flex justify-center py-10">
+          <div className="text-lg text-gray-500">Loading...</div>
         </div>
       </div>
     );
@@ -101,33 +104,16 @@ export default function HomeFeed() {
 
   if (error) {
     return (
-      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "5px" }}>
-          Home Feed
-        </h2>
-        <p style={{ color: "#555", fontSize: "14px", marginBottom: "20px" }}>
+      <div className="p-5 font-sans">
+        <h2 className="text-[22px] font-bold mb-1">Home Feed</h2>
+        <p className="text-gray-600 text-sm mb-5">
           See what's new in your community
         </p>
-        <div style={{ 
-          backgroundColor: "#fee2e2", 
-          color: "#dc2626", 
-          padding: "16px", 
-          borderRadius: "8px",
-          textAlign: "center"
-        }}>
+        <div className="bg-red-100 text-red-600 p-4 rounded-lg text-center">
           {error}
-          <button 
+          <button
             onClick={() => fetchProducts(activeCategory)}
-            style={{
-              display: "block",
-              margin: "10px auto 0",
-              padding: "8px 16px",
-              backgroundColor: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer"
-            }}
+            className="block mx-auto mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Try Again
           </button>
@@ -137,32 +123,24 @@ export default function HomeFeed() {
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+    <div className="p-5 font-sans">
       {/* Header */}
-      <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "5px" }}>
-        Home Feed
-      </h2>
-      <p style={{ color: "#555", fontSize: "14px", marginBottom: "20px" }}>
+      <h2 className="text-[22px] font-bold mb-1">Home Feed</h2>
+      <p className="text-gray-600 text-sm mb-5">
         See what's new in your community ({products.length} items)
       </p>
 
       {/* Category Filter */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+      <div className="flex flex-wrap gap-2 mb-5">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => handleCategoryChange(cat)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "20px",
-              border: "none",
-              backgroundColor: activeCategory === cat ? "#1d4ed8" : "#e5e7eb",
-              color: activeCategory === cat ? "#fff" : "#111",
-              fontWeight: "500",
-              cursor: "pointer",
-              boxShadow:
-                activeCategory === cat ? "0px 2px 6px rgba(0,0,0,0.2)" : "none",
-            }}
+            className={`px-4 py-2 rounded-full font-medium ${
+              activeCategory === cat
+                ? "bg-blue-700 text-white shadow-md"
+                : "bg-gray-200 text-black"
+            }`}
           >
             {cat}
           </button>
@@ -171,152 +149,72 @@ export default function HomeFeed() {
 
       {/* Product List */}
       {products.length === 0 ? (
-        <div style={{ 
-          textAlign: "center", 
-          padding: "40px", 
-          color: "#666",
-          backgroundColor: "#f9fafb",
-          borderRadius: "8px",
-          border: "1px dashed #d1d5db"
-        }}>
-          <h3 style={{ margin: "0 0 8px 0" }}>No items found</h3>
-          <p style={{ margin: 0 }}>
-            {activeCategory === "All Items" 
-              ? "Be the first to post an item in your community!" 
-              : `No items found in ${activeCategory} category.`
-            }
+        <div className="text-center p-10 text-gray-600 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <h3 className="mb-2 text-lg font-semibold">No items found</h3>
+          <p>
+            {activeCategory === "All Items"
+              ? "Be the first to post an item in your community!"
+              : `No items found in ${activeCategory} category.`}
           </p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+        <div className="flex flex-wrap gap-5">
           {products.map((product) => (
             <div
               key={product.id}
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                width: "280px",
-                overflow: "hidden",
-              }}
+              className="bg-white rounded-lg shadow-md w-[280px] overflow-hidden"
             >
               {/* Image */}
-              <div style={{ position: "relative" }}>
+              <div className="relative">
                 <img
-                  src={product.images[0]} // Use first image from the array
+                  src={product.images[0]}
                   alt={product.title}
-                  style={{ width: "100%", height: "160px", objectFit: "cover" }}
+                  className="w-full h-40 object-cover"
                   onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=160&fit=crop";
+                    e.target.src =
+                      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=160&fit=crop";
                   }}
                 />
                 <span
-                  style={{
-                    position: "absolute",
-                    top: "10px",
-                    left: "10px",
-                    backgroundColor: product.isSelling ? "#ef4444" : "#10b981",
-                    color: "#fff",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    padding: "4px 8px",
-                    borderRadius: "8px",
-                  }}
+                  className={`absolute top-2 left-2 text-white text-xs font-semibold px-2 py-1 rounded ${
+                    product.isSelling ? "bg-red-500" : "bg-green-500"
+                  }`}
                 >
                   {product.isSelling ? "For Sale" : "For Trade"}
                 </span>
                 {product.quantity > 1 && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      backgroundColor: "rgba(0,0,0,0.7)",
-                      color: "#fff",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      padding: "4px 8px",
-                      borderRadius: "8px",
-                    }}
-                  >
+                  <span className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs font-semibold px-2 py-1 rounded">
                     Qty: {product.quantity}
                   </span>
                 )}
               </div>
 
               {/* Content */}
-              <div style={{ padding: "12px" }}>
-                <h3
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    marginBottom: "6px",
-                    color: "#111",
-                  }}
-                >
+              <div className="p-3">
+                <h3 className="text-sm font-semibold mb-1 text-gray-900">
                   {product.title}
                 </h3>
                 <p
-                  style={{
-                    color: product.isSelling ? "#ef4444" : "#10b981",
-                    fontWeight: "700",
-                    fontSize: "14px",
-                    marginBottom: "4px",
-                  }}
+                  className={`font-bold text-sm mb-1 ${
+                    product.isSelling ? "text-red-500" : "text-green-500"
+                  }`}
                 >
                   {formatPrice(product)}
                 </p>
                 {!product.isSelling && product.tradeFor && (
-                  <p
-                    style={{
-                      color: "#666",
-                      fontSize: "12px",
-                      marginBottom: "8px",
-                      fontStyle: "italic",
-                    }}
-                  >
+                  <p className="text-gray-500 text-xs mb-2 italic">
                     Looking for: {product.tradeFor}
                   </p>
                 )}
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "12px",
-                    marginBottom: "8px",
-                    lineHeight: "1.4",
-                  }}
-                >
-                  {product.description.length > 60 
-                    ? `${product.description.substring(0, 60)}...` 
-                    : product.description
-                  }
+                <p className="text-gray-500 text-xs mb-2 leading-snug">
+                  {product.description.length > 60
+                    ? `${product.description.substring(0, 60)}...`
+                    : product.description}
                 </p>
 
                 {/* User & Location */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "12px",
-                    color: "#555",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "22px",
-                      height: "22px",
-                      backgroundColor: "#1d4ed8",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontSize: "12px",
-                      fontWeight: "700",
-                    }}
-                  >
+                <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <div className="w-[22px] h-[22px] bg-blue-700 rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {getSellerInitial(product.seller)}
                   </div>
                   <span>{getDisplayLocation(product.seller)}</span> •
@@ -325,19 +223,13 @@ export default function HomeFeed() {
               </div>
 
               {/* Footer */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderTop: "1px solid #e5e7eb",
-                  padding: "8px 12px",
-                  fontSize: "12px",
-                  color: "#333",
-                }}
-              >
+              <div className="flex justify-between border-t border-gray-200 px-3 py-2 text-xs text-gray-700">
                 <span>❤️ 0</span>
                 <span>💬 0</span>
-                <span style={{ color: "#1d4ed8", fontWeight: "600", cursor: "pointer" }}>
+                <span 
+                  className="text-blue-700 font-semibold cursor-pointer"
+                  onClick={() => handleBuyTradeClick(product)}
+                >
                   {product.isSelling ? "Buy" : "Trade"}
                 </span>
               </div>
@@ -348,24 +240,8 @@ export default function HomeFeed() {
 
       {/* Floating Action Button */}
       <button
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          width: "50px",
-          height: "50px",
-          backgroundColor: "#2563eb",
-          color: "#fff",
-          border: "none",
-          borderRadius: "50%",
-          fontSize: "24px",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-          cursor: "pointer",
-        }}
-        onClick={() => {
-          // You can add navigation to post creation page here
-          console.log("Add new post");
-        }}
+        className="fixed bottom-5 right-5 w-[50px] h-[50px] bg-blue-600 text-white rounded-full text-2xl shadow-lg flex items-center justify-center"
+        onClick={() => console.log("Add new post")}
       >
         +
       </button>

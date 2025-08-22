@@ -3,7 +3,7 @@ import TradeConnectSidebar from './TradeConnectSidebar';
 
 export default function UserLayout({ children }) {
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', width: '100%'}}>
       {/* Sidebar - Fixed width, full height */}
       <TradeConnectSidebar />
       

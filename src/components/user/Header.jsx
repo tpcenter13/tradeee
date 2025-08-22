@@ -82,7 +82,7 @@ export default function Header() {
                   className={styles.userAvatar}
                 />
                 <div className={styles.userText}>
-                  <span className={styles.userName}>{user?.nickname || user?.displayName || 'User'}</span>
+                  <span className={styles.userName}>{user?.username}</span>
                   <span className={styles.userEmail}>{user?.email}</span>
                 </div>
               </div>

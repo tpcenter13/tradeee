@@ -1,6 +1,7 @@
 
 import Navbar from '@/components/navbar';
-import '../styles/globals.css'; // kung nasa src/styles
+import '../styles/globals.css';
+import './globals.css'
 import { AppProvider } from './context/AppContext';
 
 

@@ -1,8 +1,10 @@
 "use client";
 
+import { useAppState } from "@/app/context/AppContext";
 import { useState } from "react";
 
 export default function Profile() {
+  const { user } = useAppState();
   const [activeTab, setActiveTab] = useState("posts");
 
   const tabStyle = (tab) => ({
@@ -44,7 +46,7 @@ export default function Profile() {
         >
           U
         </div>
-        <h1 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1e40af" }}>User</h1>
+        <h1 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#1e40af" }}>{user?.email}</h1>
         <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>Zone 5, Barangay Buliha</p>
 
         <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginTop: "0.5rem", color: "#6b7280", fontSize: "0.875rem" }}>

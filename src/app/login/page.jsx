@@ -24,7 +24,7 @@ export default function LoginPage() {
     if (isAuthenticated && user) {
       const redirectPath = user.email === 'admintradeconnecta@gmail.com' 
         ? '/dashboard/admin' 
-        : '/dashboard/user';
+        : '/dashboard/user/home';
       router.push(redirectPath);
     }
   }, [isAuthenticated, user, router]);
@@ -73,7 +73,7 @@ export default function LoginPage() {
       if (user.email === 'admintradeconnecta@gmail.com') {
         router.push('/dashboard/admin');
       } else {
-        router.push('/dashboard/user');
+        router.push('/dashboard/user/home');
       }
       
     } catch (error) {
