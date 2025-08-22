@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAppState } from "@/app/context/AppContext"; // Adjust path to match your context
 
 export default function HomeFeed() {
   const router = useRouter();
+  const { user, isAuthenticated } = useAppState(); // Get current user from context
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,11 +77,33 @@ export default function HomeFeed() {
     return "U";
   };
 
+  // Check if current user is the seller of the product
+  const isCurrentUserSeller = (product) => {
+    if (!user || !isAuthenticated) return false;
+    
+    // Check by UID if available
+    if (product.seller?.uid && user.uid) {
+      return product.seller.uid === user.uid;
+    }
+    
+    // Fallback to email comparison
+    if (product.seller?.email && user.email) {
+      return product.seller.email === user.email;
+    }
+    
+    return false;
+  };
+
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
   };
 
   const handleBuyTradeClick = (product) => {
+    // Don't allow users to buy/trade their own products
+    if (isCurrentUserSeller(product)) {
+      return;
+    }
+
     // Create a message with product details
     const message = `Hi, I'm interested in your ${product.title} (${product.isSelling ? 'For Sale' : 'For Trade'})`;
     
@@ -88,6 +112,25 @@ export default function HomeFeed() {
     
     // Navigate to messages page with product info as query params
     router.push(`/dashboard/user/messages?product=${encodeURIComponent(product.title)}&message=${encodeURIComponent(message)}&sellerEmail=${encodeURIComponent(sellerEmail)}&productId=${product.id}&price=${product.price}&image=${product.images[0]}&isSelling=${product.isSelling}`);
+  };
+
+  const renderActionButton = (product) => {
+    if (isCurrentUserSeller(product)) {
+      return (
+        <span className="text-gray-500 font-semibold">
+          Your Product
+        </span>
+      );
+    }
+
+    return (
+      <span 
+        className="text-blue-700 font-semibold cursor-pointer hover:text-blue-800"
+        onClick={() => handleBuyTradeClick(product)}
+      >
+        {product.isSelling ? "Buy" : "Trade"}
+      </span>
+    );
   };
 
   if (loading) {
@@ -187,6 +230,12 @@ export default function HomeFeed() {
                     Qty: {product.quantity}
                   </span>
                 )}
+                {/* Add "Your Product" badge for current user's items */}
+                {isCurrentUserSeller(product) && (
+                  <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                    Your Product
+                  </span>
+                )}
               </div>
 
               {/* Content */}
@@ -226,12 +275,7 @@ export default function HomeFeed() {
               <div className="flex justify-between border-t border-gray-200 px-3 py-2 text-xs text-gray-700">
                 <span>❤️ 0</span>
                 <span>💬 0</span>
-                <span 
-                  className="text-blue-700 font-semibold cursor-pointer"
-                  onClick={() => handleBuyTradeClick(product)}
-                >
-                  {product.isSelling ? "Buy" : "Trade"}
-                </span>
+                {renderActionButton(product)}
               </div>
             </div>
           ))}
