@@ -1,46 +1,42 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { initializeApp, getApps } from "firebase/app";
-import '@fortawesome/fontawesome-free/css/all.min.css';
 import {
   getAuth,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import Head from 'next/head';
-import Link from 'next/link';
+import Head from "next/head";
+import Link from "next/link";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCt2hnbw8Rtaj2eYAhjyhozSiiL8K4VnnU",
-  authDomain: "trade-connect-eb693.firebaseapp.com",
-  projectId: "trade-connect-eb693",
-  storageBucket: "trade-connect-eb693.appspot.com",
-  messagingSenderId: "581463726455",
-  appId: "1:581463726455:web:ccc55178cd83cd5e9d6972",
-  databaseURL: "https://trade-connect-eb693-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
-
 
 const firebaseApps = getApps();
 const app = firebaseApps.length === 0 ? initializeApp(firebaseConfig) : firebaseApps[0];
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-
 const getInitials = (name) => {
-  if (!name) return '';
-  const names = name.split(' ');
+  if (!name) return "";
+  const names = name.split(" ");
   let initials = names[0].substring(0, 1).toUpperCase();
   if (names.length > 1) {
     initials += names[names.length - 1].substring(0, 1).toUpperCase();
   }
   return initials;
 };
-
 
 const stringToColor = (string) => {
   let hash = 0;
@@ -51,20 +47,20 @@ const stringToColor = (string) => {
   return color;
 };
 
-
 const generateAvatar = (name, size = 40) => {
   const initials = getInitials(name);
   const backgroundColor = stringToColor(name);
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${size}" height="${size}" fill="${backgroundColor}" rx="${size/2}" />
-      <text x="50%" y="50%" fill="#ffffff" font-family="Arial, sans-serif" font-size="${size/2}" text-anchor="middle" dy=".35em">
+      <rect width="${size}" height="${size}" fill="${backgroundColor}" rx="${size / 2}" />
+      <text x="50%" y="50%" fill="#ffffff" font-family="Arial, sans-serif" font-size="${
+        size / 2
+      }" text-anchor="middle" dy=".35em">
         ${initials}
       </text>
     </svg>
   `;
 };
-
 
 const svgToDataUrl = (svg) => {
   return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
@@ -72,30 +68,29 @@ const svgToDataUrl = (svg) => {
 
 export default function SignupPage() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [zone, setZone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [zone, setZone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminCode, setAdminCode] = useState('');
+  const [adminCode, setAdminCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    zone: '',
-    password: '',
-    confirmPassword: '',
-    adminCode: ''
+    username: "",
+    email: "",
+    zone: "",
+    password: "",
+    confirmPassword: "",
+    adminCode: "",
   });
-
 
   useEffect(() => {
     if (username && username.length >= 2) {
@@ -103,64 +98,88 @@ export default function SignupPage() {
       const dataUrl = svgToDataUrl(avatarSvg);
       setAvatarUrl(dataUrl);
     } else {
-      setAvatarUrl('');
+      setAvatarUrl("");
     }
   }, [username]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userDoc = doc(db, "users", user.uid);
+          const userData = await getDoc(userDoc);
+          if (userData.exists()) {
+            const data = userData.data();
+            const redirectPath = data.role === "admin" ? "/dashboard/admin" : "/dashboard/user";
+            console.log("User authenticated, redirecting to:", redirectPath);
+            // Use replace instead of push to avoid adding to history stack
+            await router.replace(redirectPath);
+          } else {
+            console.log("User document not found, waiting for creation");
+          }
+        } catch (err) {
+          console.error("Error checking user data:", err);
+          setError("Failed to load user data. Please try again.");
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const validateForm = () => {
     const newErrors = {
-      username: '',
-      email: '',
-      zone: '',
-      password: '',
-      confirmPassword: '',
-      adminCode: ''
+      username: "",
+      email: "",
+      zone: "",
+      password: "",
+      confirmPassword: "",
+      adminCode: "",
     };
 
     let isValid = true;
 
     if (!username) {
-      newErrors.username = 'Username is required';
+      newErrors.username = "Username is required";
       isValid = false;
     } else if (username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      newErrors.username = "Username must be at least 3 characters";
       isValid = false;
     }
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
       isValid = false;
     }
 
     if (!zone || !zone.startsWith("Zone")) {
-      newErrors.zone = 'Please select your zone';
+      newErrors.zone = "Please select your zone";
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
       isValid = false;
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
       isValid = false;
     }
 
     if (isAdmin && !adminCode) {
-      newErrors.adminCode = 'Admin code is required';
+      newErrors.adminCode = "Admin code is required";
       isValid = false;
     } else if (isAdmin && adminCode !== "TRADEADMIN") {
-      newErrors.adminCode = 'Invalid admin code';
+      newErrors.adminCode = "Invalid admin code";
       isValid = false;
     }
 
@@ -170,24 +189,22 @@ export default function SignupPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!validateForm()) {
       return;
     }
 
-    
-    const isAdminUser = email === 'admintradeconnecta@gmail.com' && adminCode === 'TRADEADMIN';
-    
-    if (email === 'admintradeconnecta@gmail.com' && adminCode !== 'TRADEADMIN') {
-      setError('Invalid admin code');
+    const isAdminUser = email === "admintradeconnecta@gmail.com" && adminCode === "TRADEADMIN";
+
+    if (email === "admintradeconnecta@gmail.com" && adminCode !== "TRADEADMIN") {
+      setError("Invalid admin code");
       return;
     }
 
     setLoading(true);
 
     try {
-     
       const methods = await fetchSignInMethodsForEmail(auth, email);
       if (methods && methods.length > 0) {
         throw { code: "auth/email-already-in-use" };
@@ -198,26 +215,32 @@ export default function SignupPage() {
 
       const finalAvatarUrl = avatarUrl || svgToDataUrl(generateAvatar(username || email));
 
-      
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         username,
         email,
         zone,
         role: isAdminUser ? "admin" : "user",
         photoURL: finalAvatarUrl,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
-      if (isAdminUser) {
-        router.push('/dashboard/admin');
-      } else {
-        router.push('/dashboard/user');
-      }
+      // Wait for auth state to persist
+      await new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          if (currentUser && currentUser.uid === user.uid) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
 
+      const redirectPath = isAdminUser ? "/dashboard/admin" : "/dashboard/user";
+      console.log("Signup successful, redirecting to:", redirectPath);
+      await router.replace(redirectPath);
     } catch (error) {
       console.error("Signup error:", error);
-      setFailedAttempts(prev => prev + 1);
-      handleSignupError(error);
+      setFailedAttempts((prev) => prev + 1);
+      await handleSignupError(error);
     } finally {
       setLoading(false);
     }
@@ -226,39 +249,47 @@ export default function SignupPage() {
   const handleSignupError = async (error) => {
     if (error.code === "auth/email-already-in-use") {
       try {
-        
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        
-       
-        const userDoc = doc(db, 'users', user.uid);
+
+        // Wait for auth state to persist
+        await new Promise((resolve) => {
+          const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser && currentUser.uid === user.uid) {
+              unsubscribe();
+              resolve();
+            }
+          });
+        });
+
+        const userDoc = doc(db, "users", user.uid);
         const userData = await getDoc(userDoc);
-        
+
         if (userData.exists()) {
           const data = userData.data();
-          if (data.role === 'admin') {
-            router.push('/dashboard/admin');
-          } else {
-            router.push('/dashboard/user');
-          }
+          const redirectPath = data.role === "admin" ? "/dashboard/admin" : "/dashboard/user";
+          console.log("Sign-in successful, redirecting to:", redirectPath);
+          await router.replace(redirectPath);
+        } else {
+          setError("User data not found. Please contact support.");
         }
       } catch (signInError) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
-          email: 'This email is already registered. Please sign in.'
+          email: "This email is already registered. Please sign in or use a different email.",
         }));
       }
     } else {
       let errorMessage = "Signup failed. Please try again.";
-      let errorField = 'email';
-      
+      let errorField = "email";
+
       switch (error.code) {
         case "auth/invalid-email":
           errorMessage = "Invalid email address";
           break;
         case "auth/weak-password":
           errorMessage = "Password should be at least 6 characters";
-          errorField = 'password';
+          errorField = "password";
           break;
         case "auth/network-request-failed":
           errorMessage = "Network error. Please check your connection.";
@@ -266,34 +297,39 @@ export default function SignupPage() {
         default:
           errorMessage = error.message || "An unexpected error occurred";
       }
-      
-      setErrors(prev => ({
+
+      setErrors((prev) => ({
         ...prev,
-        [errorField]: errorMessage
+        [errorField]: errorMessage,
       }));
     }
   };
 
- 
   return (
     <>
       <Head>
         <title>TradeConnect - Sign Up</title>
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+          rel="stylesheet"
+        />
       </Head>
 
       <div className="container">
         <div className="left-section">
           <div className="logo-container">
             <div className="logo">
-              <img 
-                src="/logo.png" 
+              <img
+                src="/logo.png"
                 alt="TradeConnect Logo"
                 onError={(e) => {
-                  e.target.src = '/fallback-logo.png';
+                  e.target.src = "/fallback-logo.png";
                   e.target.onerror = null;
                 }}
               />
@@ -305,30 +341,30 @@ export default function SignupPage() {
 
         <div className="right-section">
           <h2>Sign Up</h2>
-          
+          {error && <div className="error-message global-error">{error}</div>}
           <form onSubmit={handleSignup}>
             <div className="input-group">
               <i className="fas fa-user"></i>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={username}
                 onChange={(e) => {
                   setUsername(e.target.value);
-                  setErrors(prev => ({ ...prev, username: '' }));
+                  setErrors((prev) => ({ ...prev, username: "" }));
                 }}
-                placeholder="Username" 
-                required 
-                className={errors.username ? 'error' : username ? 'success' : ''}
+                placeholder="Username"
+                required
+                className={errors.username ? "error" : username ? "success" : ""}
               />
               {errors.username && <div className="error-message">{errors.username}</div>}
               {avatarUrl && (
                 <div className="avatar-preview-container">
-                  <img 
-                    src={avatarUrl} 
-                    alt="Profile Preview" 
+                  <img
+                    src={avatarUrl}
+                    alt="Profile Preview"
                     className="avatar-preview"
                     onError={(e) => {
-                      const fallbackSvg = generateAvatar(username || 'US');
+                      const fallbackSvg = generateAvatar(username || "US");
                       e.target.src = svgToDataUrl(fallbackSvg);
                       e.target.onerror = null;
                     }}
@@ -344,33 +380,33 @@ export default function SignupPage() {
 
             <div className="input-group">
               <i className="fas fa-envelope"></i>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setErrors(prev => ({ ...prev, email: '' }));
+                  setErrors((prev) => ({ ...prev, email: "" }));
                 }}
-                placeholder="Email" 
-                required 
-                className={errors.email ? 'error' : email ? 'success' : ''}
+                placeholder="Email"
+                required
+                className={errors.email ? "error" : email ? "success" : ""}
               />
               {errors.email && <div className="error-message">{errors.email}</div>}
             </div>
 
             <div className="input-group">
               <i className="fas fa-map-marker-alt"></i>
-              <select 
+              <select
                 value={zone}
                 onChange={(e) => {
                   setZone(e.target.value);
-                  setErrors(prev => ({ ...prev, zone: '' }));
+                  setErrors((prev) => ({ ...prev, zone: "" }));
                 }}
                 required
-                className={errors.zone ? 'error' : zone ? 'success' : ''}
+                className={errors.zone ? "error" : zone ? "success" : ""}
               >
                 <option value="">Select your Zone</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => (
                   <option key={num} value={`Zone ${num}`}>Zone {num}</option>
                 ))}
               </select>
@@ -379,20 +415,20 @@ export default function SignupPage() {
 
             <div className="input-group">
               <i className="fas fa-lock"></i>
-              <input 
-                type={showPassword ? "text" : "password"} 
+              <input
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setErrors(prev => ({ ...prev, password: '' }));
+                  setErrors((prev) => ({ ...prev, password: "" }));
                 }}
-                placeholder="Password" 
-                required 
-                className={errors.password ? 'error' : password ? 'success' : ''}
+                placeholder="Password"
+                required
+                className={errors.password ? "error" : password ? "success" : ""}
               />
               {password && (
-                <i 
-                  className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} password-toggle`}
+                <i
+                  className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"} password-toggle`}
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   role="button"
@@ -404,39 +440,43 @@ export default function SignupPage() {
 
             <div className="input-group">
               <i className="fas fa-lock"></i>
-              <input 
-                type={showConfirmPassword ? "text" : "password"} 
+              <input
+                type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
-                  setErrors(prev => ({ ...prev, confirmPassword: '' }));
+                  setErrors((prev) => ({ ...prev, confirmPassword: "" }));
                 }}
-                placeholder="Confirm Password" 
-                required 
-                className={errors.confirmPassword ? 'error' : confirmPassword ? 'success' : ''}
+                placeholder="Confirm Password"
+                required
+                className={errors.confirmPassword ? "error" : confirmPassword ? "success" : ""}
               />
               {confirmPassword && (
-                <i 
-                  className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} password-toggle`}
+                <i
+                  className={`fas ${
+                    showConfirmPassword ? "fa-eye-slash" : "fa-eye"
+                  } password-toggle`}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   role="button"
                   tabIndex="0"
                 />
               )}
-              {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
+              {errors.confirmPassword && (
+                <div className="error-message">{errors.confirmPassword}</div>
+              )}
             </div>
 
             <div className="admin-checkbox">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="isAdmin"
                 checked={isAdmin}
                 onChange={(e) => {
                   setIsAdmin(e.target.checked);
                   if (!e.target.checked) {
-                    setAdminCode('');
-                    setErrors(prev => ({ ...prev, adminCode: '' }));
+                    setAdminCode("");
+                    setErrors((prev) => ({ ...prev, adminCode: "" }));
                   }
                 }}
               />
@@ -446,22 +486,29 @@ export default function SignupPage() {
             {isAdmin && (
               <div className="input-group">
                 <i className="fas fa-key"></i>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={adminCode}
                   onChange={(e) => {
                     setAdminCode(e.target.value);
-                    setErrors(prev => ({ ...prev, adminCode: '' }));
+                    setErrors((prev) => ({ ...prev, adminCode: "" }));
                   }}
-                  placeholder="Enter Admin Code" 
-                  className={errors.adminCode ? 'error' : adminCode ? 'success' : ''}
+                  placeholder="Enter Admin Code"
+                  className={errors.adminCode ? "error" : adminCode ? "success" : ""}
                 />
                 {errors.adminCode && <div className="error-message">{errors.adminCode}</div>}
               </div>
             )}
 
             <div className="terms-privacy">
-              By signing up, you agree to our <button type="button" onClick={() => setShowModal(true)} className="terms-link">Terms and Privacy</button>
+              By signing up, you agree to our{" "}
+              <button
+                type="button"
+                onClick={() => setShowModal(true)}
+                className="terms-link"
+              >
+                Terms and Privacy
+              </button>
             </div>
 
             <button type="submit" disabled={loading}>
@@ -470,7 +517,7 @@ export default function SignupPage() {
                   <span className="loading-spinner"></span> Creating account...
                 </>
               ) : (
-                'Sign Up'
+                "Sign Up"
               )}
             </button>
           </form>
@@ -492,7 +539,9 @@ export default function SignupPage() {
             <p>4. Your location data will be used for verification purposes only.</p>
             <p>5. The admin reserves the right to verify your identity and location.</p>
             <p>6. Any violation of these terms may result in account suspension.</p>
-            <button className="close-modal" onClick={() => setShowModal(false)}>Close</button>
+            <button className="close-modal" onClick={() => setShowModal(false)}>
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -507,7 +556,7 @@ export default function SignupPage() {
           --dark-gray: #333;
           --link-blue: #1a73e8;
         }
-        
+
         * {
           margin: 0;
           padding: 0;
@@ -600,6 +649,13 @@ export default function SignupPage() {
           color: var(--secondary);
         }
 
+        .global-error {
+          color: var(--error);
+          text-align: center;
+          margin-bottom: 15px;
+          font-size: 14px;
+        }
+
         .input-group {
           position: relative;
           margin-bottom: 15px;
@@ -641,7 +697,7 @@ export default function SignupPage() {
         .input-group select.success {
           border-color: var(--success);
         }
-        
+
         .password-toggle {
           position: absolute;
           right: 15px;
@@ -752,7 +808,7 @@ export default function SignupPage() {
           display: inline-block;
           width: 16px;
           height: 16px;
-          border: 2px solid rgba(255,255,255,.3);
+          border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
           border-top-color: #fff;
           animation: spin 1s ease-in-out infinite;
@@ -833,13 +889,21 @@ export default function SignupPage() {
         }
 
         @keyframes spinAndScale {
-          0% { transform: rotate(0deg) scale(1); }
-          50% { transform: rotate(180deg) scale(1.1); }
-          100% { transform: rotate(360deg) scale(1); }
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+          50% {
+            transform: rotate(180deg) scale(1.1);
+          }
+          100% {
+            transform: rotate(360deg) scale(1);
+          }
         }
 
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          to {
+            transform: rotate(360deg);
+          }
         }
 
         @media (max-width: 768px) {
