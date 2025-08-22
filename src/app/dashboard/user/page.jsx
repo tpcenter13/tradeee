@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { removeFdProcessedId } from '@/utils/removeFdProcessedId';
 import { useRouter } from 'next/navigation';
 import { useAppActions, useAppState } from '@/app/context/AppContext';
@@ -23,6 +23,7 @@ export default function UserPage() {
   const messagesEndRef = useRef(null);
   const forumPostFormRef = useRef(null);
 
+  // State initialization - moved complex objects to useMemo
   const [activeSection, setActiveSection] = useState('home');
   const [activeProfileTab, setActiveProfileTab] = useState('posts');
   const [posts, setPosts] = useState([]);
@@ -73,152 +74,172 @@ export default function UserPage() {
   const [userItemsForTrade, setUserItemsForTrade] = useState([]);
   const [operationInProgress, setOperationInProgress] = useState(false);
 
+  // Memoized sample data to prevent recreation on every render
+  const samplePosts = useRef([
+    {
+      id: '1',
+      item: {
+        title: 'Wireless Headphones',
+        description: 'Brand new wireless headphones with noise cancellation',
+        category: 'Electronics',
+        quantity: 1,
+        isSelling: true,
+        price: 2500,
+        tradeFor: '',
+        userId: 'user1',
+        isAvailable: true,
+        createdAt: new Date(),
+        images: ['https://picsum.photos/seed/headphones/300/200'],
+        nickname: 'TechGuy',
+        zone: '5'
+      },
+      userData: {
+        username: 'TechGuy',
+        photoURL: '',
+        location: 'Zone 5, Barangay Bulihan',
+        zone: '5',
+        role: 'user',
+        emailVerified: true,
+        nickname: 'TechGuy'
+      },
+      likeCount: 2,
+      userLiked: false,
+      comments: []
+    },
+    // ... other sample posts
+  ]).current;
+
+  const sampleForumPosts = useRef([
+    {
+      id: '1',
+      post: {
+        title: 'Best places to meet for trades',
+        content: 'Mag ingat sa mga asong gala',
+        category: 'Tips',
+        userId: 'Leo',
+        createdAt: new Date(),
+        nickname: 'SafetyFirst',
+        zone: '5'
+      },
+      userData: {
+        username: 'SafetyFirst',
+        photoURL: '',
+        location: 'Zone 5, Barangay Bulihan',
+        zone: '5',
+        role: 'mat',
+        emailVerified: true,
+        nickname: 'SafetyFirst'
+      },
+      likeCount: 1,
+      userLiked: false,
+      comments: [],
+      createdAt: new Date()
+    }
+  ]).current;
+
   useEffect(() => {
     const cleanup = removeFdProcessedId();
     return () => cleanup && cleanup();
   }, []);
 
+  // Optimized data initialization
   useEffect(() => {
-    // Sample data initialization
-    const samplePosts = [
-      {
-        id: '1',
-        item: {
-          title: 'Wireless Headphones',
-          description: 'Brand new wireless headphones with noise cancellation',
-          category: 'Electronics',
-          quantity: 1,
-          isSelling: true,
-          price: 2500,
-          tradeFor: '',
-          userId: 'user1',
-          isAvailable: true,
-          createdAt: new Date(),
-          images: ['https://picsum.photos/seed/headphones/300/200'],
-          nickname: 'TechGuy',
-          zone: '5'
-        },
-        userData: {
-          username: 'TechGuy',
-          photoURL: '',
-          location: 'Zone 5, Barangay Bulihan',
-          zone: '5',
-          role: 'user',
-          emailVerified: true,
-          nickname: 'TechGuy'
-        },
-        likeCount: 2,
-        userLiked: false,
-        comments: []
-      },
-      // ... other sample posts
-    ];
-    setPosts(samplePosts);
+    // Only initialize if data is empty
+    if (posts.length === 0) {
+      setPosts(samplePosts);
+    }
+    
+    if (forumPosts.length === 0) {
+      setForumPosts(sampleForumPosts);
+    }
 
-    const sampleForumPosts = [
-      {
-        id: '1',
-        post: {
-          title: 'Best places to meet for trades',
-          content: 'Mag ingat sa mga asong gala',
-          category: 'Tips',
-          userId: 'Leo',
-          createdAt: new Date(),
-          nickname: 'SafetyFirst',
-          zone: '5'
-        },
-        userData: {
-          username: 'SafetyFirst',
-          photoURL: '',
-          location: 'Zone 5, Barangay Bulihan',
-          zone: '5',
-          role: 'mat',
-          emailVerified: true,
-          nickname: 'SafetyFirst'
-        },
-        likeCount: 1,
-        userLiked: false,
-        comments: [],
-        createdAt: new Date()
-      }
-    ];
-    setForumPosts(sampleForumPosts);
+    if (helpArticles.length === 0) {
+      setHelpArticles([
+        { id: '1', title: 'How to create an account', category: 'Getting Started', content: '...' },
+        // ... other articles
+      ]);
+    }
 
-    const articles = [
-      { id: '1', title: 'How to create an account', category: 'Getting Started', content: '...' },
-      // ... other articles
-    ];
-    setHelpArticles(articles);
-
-    setNotifications([
-      {
-        id: '1',
-        type: "trade",
-        message: "Leo wants to trade for your headphones",
-        read: false,
-        createdAt: new Date()
-      }
-    ]);
-    setUnreadCount(1);
-
-    setTradeRequests([
-      {
-        id: '1',
-        offeredItemId: '2',
-        requestedItemId: '1',
-        buyerId: 'mat',
-        sellerId: 'kat',
-        status: "pending",
-        message: "I'd like to trade my watch for your headphones",
-        createdAt: new Date(),
-        participants: ['mat', 'kat']
-      }
-    ]);
-
-    setReviews([
-      {
-        id: '1',
-        tradeId: '0',
-        userId: '',
-        reviewerId: 'kat',
-        rating: 0,
-        comment: 'Great trade experience!',
-        createdAt: new Date()
-      }
-    ]);
-
-    setChatUsers([
-      {
-        id: '1',
-        participants: ['Leo', 'Kat'],
-        lastUpdated: new Date(),
-        lastMessage: "Hello interesado po ako",
-        otherUser: {
-          username: 'TradePartner',
-          photoURL: '',
-          nickname: 'TradePartner'
+    if (notifications.length === 0) {
+      setNotifications([
+        {
+          id: '1',
+          type: "trade",
+          message: "Leo wants to trade for your headphones",
+          read: false,
+          createdAt: new Date()
         }
-      }
-    ]);
+      ]);
+      setUnreadCount(1);
+    }
 
-    setUserItemsForTrade([
-      {
-        id: '2',
-        item: {
-          title: 'Vintage Watch',
-          description: 'Classic vintage watch from the 1970s',
-          images: ['https://picsum.photos/seed/watch/300/200'],
-          isAvailable: true,
-          isSelling: false
+    if (tradeRequests.length === 0) {
+      setTradeRequests([
+        {
+          id: '1',
+          offeredItemId: '2',
+          requestedItemId: '1',
+          buyerId: 'mat',
+          sellerId: 'kat',
+          status: "pending",
+          message: "I'd like to trade my watch for your headphones",
+          createdAt: new Date(),
+          participants: ['mat', 'kat']
         }
-      }
-    ]);
+      ]);
+    }
+
+    if (reviews.length === 0) {
+      setReviews([
+        {
+          id: '1',
+          tradeId: '0',
+          userId: '',
+          reviewerId: 'kat',
+          rating: 0,
+          comment: 'Great trade experience!',
+          createdAt: new Date()
+        }
+      ]);
+    }
+
+    if (chatUsers.length === 0) {
+      setChatUsers([
+        {
+          id: '1',
+          participants: ['Leo', 'Kat'],
+          lastUpdated: new Date(),
+          lastMessage: "Hello interesado po ako",
+          otherUser: {
+            username: 'TradePartner',
+            photoURL: '',
+            nickname: 'TradePartner'
+          }
+        }
+      ]);
+    }
+
+    if (userItemsForTrade.length === 0) {
+      setUserItemsForTrade([
+        {
+          id: '2',
+          item: {
+            title: 'Vintage Watch',
+            description: 'Classic vintage watch from the 1970s',
+            images: ['https://picsum.photos/seed/watch/300/200'],
+            isAvailable: true,
+            isSelling: false
+          }
+        }
+      ]);
+    }
 
     if (typeof window !== 'undefined' && !localStorage.getItem('welcomeShown')) {
       setShowWelcomeModal(true);
       localStorage.setItem('welcomeShown', 'true');
     }
-  }, []);
+  }, [posts.length, forumPosts.length, helpArticles.length, notifications.length, 
+      tradeRequests.length, reviews.length, chatUsers.length, userItemsForTrade.length]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -234,7 +255,8 @@ export default function UserPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const generateAvatar = (username) => {
+  // Memoized functions to prevent unnecessary re-renders
+  const generateAvatar = useCallback((username) => {
     const initials = username ? username.charAt(0).toUpperCase() : 'U';
     const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
     const color = colors[initials.charCodeAt(0) % colors.length];
@@ -246,400 +268,397 @@ export default function UserPage() {
         </text>
       </svg>
     `;
-  };
+  }, []);
 
-  const svgToDataUrl = (svg) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  const svgToDataUrl = useCallback((svg) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`, []);
 
-  const showToast = (message, type) => {
+  const showToast = useCallback((message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 5000);
-  };
+  }, []);
 
-  // Other handler functions (filterItems, loadMorePosts, handleImageUpload, etc.) remain unchanged
-  // ... [Include all handler functions from the original code, e.g., filterItems, loadMorePosts, handleImageUpload, removeImage, toggleMenu, toggleDropdown, startTour, showHelpArticles, showHelpArticleDetail, backToHelpList, submitFeedback, offerTrade, submitTradeOffer, respondToTrade, buyItem, handlePostSubmit, handleForumPostSubmit, toggleLike, toggleComments, addComment, deletePost, deleteForumPost, sendMessage, clearChat, deleteChat, markAsRead, markAllAsRead, deleteNotification, saveProfileSettings]
-  
-// Add these handler functions before the return statement in your UserPage component
+  // Memoized handler functions
+  const filterItems = useCallback((category) => {
+    setCurrentCategory(category);
+    setVisiblePosts(6); // Reset visible posts when filtering
+  }, []);
 
-const filterItems = (category) => {
-  setCurrentCategory(category);
-  setVisiblePosts(6); // Reset visible posts when filtering
-};
+  const loadMorePosts = useCallback(() => {
+    setVisiblePosts(prev => prev + 6);
+  }, []);
 
-const loadMorePosts = () => {
-  setVisiblePosts(prev => prev + 6);
-};
-
-const handleImageUpload = (event) => {
-  const files = Array.from(event.target.files);
-  const imagePromises = files.map(file => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.readAsDataURL(file);
+  const handleImageUpload = useCallback((event) => {
+    const files = Array.from(event.target.files);
+    const imagePromises = files.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
     });
-  });
 
-  Promise.all(imagePromises).then(images => {
-    setPostImages(prev => [...prev, ...images].slice(0, 5)); // Max 5 images
-  });
-};
+    Promise.all(imagePromises).then(images => {
+      setPostImages(prev => [...prev, ...images].slice(0, 5)); // Max 5 images
+    });
+  }, []);
 
-const removeImage = (index) => {
-  setPostImages(prev => prev.filter((_, i) => i !== index));
-};
+  const removeImage = useCallback((index) => {
+    setPostImages(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-const toggleLike = (postId, postType = 'item') => {
-  if (postType === 'item') {
-    setLikes(prev => ({
+  const toggleLike = useCallback((postId, postType = 'item') => {
+    if (postType === 'item') {
+      setLikes(prev => ({
+        ...prev,
+        [postId]: !prev[postId]
+      }));
+      setLikeCounts(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || 0) + (likes[postId] ? -1 : 1)
+      }));
+    } else {
+      // Handle forum post likes
+      setForumPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            userLiked: !post.userLiked,
+            likeCount: post.likeCount + (post.userLiked ? -1 : 1)
+          };
+        }
+        return post;
+      }));
+    }
+  }, [likes]);
+
+  const toggleComments = useCallback((postId) => {
+    setShowComments(prev => ({
       ...prev,
       [postId]: !prev[postId]
     }));
-    setLikeCounts(prev => ({
-      ...prev,
-      [postId]: (prev[postId] || 0) + (likes[postId] ? -1 : 1)
-    }));
-  } else {
-    // Handle forum post likes
-    setForumPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          userLiked: !post.userLiked,
-          likeCount: post.likeCount + (post.userLiked ? -1 : 1)
-        };
-      }
-      return post;
-    }));
-  }
-};
+  }, []);
 
-const toggleComments = (postId) => {
-  setShowComments(prev => ({
-    ...prev,
-    [postId]: !prev[postId]
-  }));
-};
-
-const addComment = (postId, postType = 'item') => {
-  if (!newComment.trim()) return;
-  
-  const comment = {
-    id: Date.now().toString(),
-    text: newComment,
-    userId: user?.uid || 'current-user',
-    username: user?.displayName || user?.nickname || 'Anonymous',
-    createdAt: new Date()
-  };
-
-  if (postType === 'item') {
-    setComments(prev => ({
-      ...prev,
-      [postId]: [...(prev[postId] || []), comment]
-    }));
-  } else {
-    setForumPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          comments: [...post.comments, comment]
-        };
-      }
-      return post;
-    }));
-  }
-  
-  setNewComment('');
-};
-
-const offerTrade = (post) => {
-  setSelectedPost(post);
-  setShowTradeOfferModal(true);
-};
-
-const buyItem = async (post) => {
-  setOperationInProgress(true);
-  try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    showToast('Purchase request sent!', 'success');
-  } catch (error) {
-    showToast('Failed to send purchase request', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
-
-const deletePost = async (postId) => {
-  if (!confirm('Are you sure you want to delete this post?')) return;
-  
-  setOperationInProgress(true);
-  try {
-    setPosts(prev => prev.filter(post => post.id !== postId));
-    showToast('Post deleted successfully', 'success');
-  } catch (error) {
-    showToast('Failed to delete post', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
-
-const deleteForumPost = async (postId) => {
-  if (!confirm('Are you sure you want to delete this forum post?')) return;
-  
-  setOperationInProgress(true);
-  try {
-    setForumPosts(prev => prev.filter(post => post.id !== postId));
-    showToast('Forum post deleted successfully', 'success');
-  } catch (error) {
-    showToast('Failed to delete forum post', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
-
-const handlePostSubmit = async (formData) => {
-  setOperationInProgress(true);
-  try {
-    const newPost = {
+  const addComment = useCallback((postId, postType = 'item') => {
+    if (!newComment.trim()) return;
+    
+    const comment = {
       id: Date.now().toString(),
-      item: {
-        title: formData.title,
-        description: formData.description,
-        category: selectedCategory,
-        quantity: formData.quantity || 1,
-        isSelling: isSelling,
-        price: formData.price || 0,
-        tradeFor: formData.tradeFor || '',
-        userId: user?.uid || 'current-user',
-        isAvailable: true,
-        createdAt: new Date(),
-        images: postImages,
-        nickname: user?.displayName || user?.nickname || 'Anonymous',
-        zone: user?.zone || '1'
-      },
-      userData: {
-        username: user?.displayName || 'Anonymous',
-        photoURL: user?.photoURL || '',
-        location: user?.location || 'Unknown',
-        zone: user?.zone || '1',
-        role: user?.role || 'user',
-        emailVerified: user?.emailVerified || false,
-        nickname: user?.nickname || 'Anonymous'
-      },
-      likeCount: 0,
-      userLiked: false,
-      comments: []
-    };
-
-    setPosts(prev => [newPost, ...prev]);
-    setShowAddPostModal(false);
-    setPostImages([]);
-    setSelectedCategory('');
-    showToast('Post created successfully!', 'success');
-  } catch (error) {
-    showToast('Failed to create post', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
-
-const handleForumPostSubmit = async (e) => {
-  e.preventDefault();
-  if (!newForumPost.title.trim() || !newForumPost.content.trim()) {
-    showToast('Please fill in all fields', 'error');
-    return;
-  }
-
-  setOperationInProgress(true);
-  try {
-    const forumPost = {
-      id: Date.now().toString(),
-      post: {
-        title: newForumPost.title,
-        content: newForumPost.content,
-        category: newForumPost.category,
-        userId: user?.uid || 'current-user',
-        createdAt: new Date(),
-        nickname: user?.displayName || user?.nickname || 'Anonymous',
-        zone: user?.zone || '1'
-      },
-      userData: {
-        username: user?.displayName || 'Anonymous',
-        photoURL: user?.photoURL || '',
-        location: user?.location || 'Unknown',
-        zone: user?.zone || '1',
-        role: user?.role || 'user',
-        emailVerified: user?.emailVerified || false,
-        nickname: user?.nickname || 'Anonymous'
-      },
-      likeCount: 0,
-      userLiked: false,
-      comments: [],
+      text: newComment,
+      userId: user?.uid || 'current-user',
+      username: user?.displayName || user?.nickname || 'Anonymous',
       createdAt: new Date()
     };
 
-    setForumPosts(prev => [forumPost, ...prev]);
-    setNewForumPost({ title: '', content: '', category: 'general' });
-    setShowAddForumPostModal(false);
-    showToast('Forum post created successfully!', 'success');
-  } catch (error) {
-    showToast('Failed to create forum post', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
+    if (postType === 'item') {
+      setComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), comment]
+      }));
+    } else {
+      setForumPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: [...post.comments, comment]
+          };
+        }
+        return post;
+      }));
+    }
+    
+    setNewComment('');
+  }, [newComment, user]);
 
-const respondToTrade = async (requestId, response, message = '') => {
-  setOperationInProgress(true);
-  try {
-    setTradeRequests(prev => prev.map(request => 
-      request.id === requestId 
-        ? { ...request, status: response, responseMessage: message }
-        : request
-    ));
-    showToast(`Trade ${response}`, 'success');
-  } catch (error) {
-    showToast('Failed to respond to trade', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
+  const offerTrade = useCallback((post) => {
+    setSelectedPost(post);
+    setShowTradeOfferModal(true);
+  }, []);
 
-const submitTradeOffer = async (offerData) => {
-  setOperationInProgress(true);
-  try {
-    const newTradeRequest = {
+  const buyItem = useCallback(async (post) => {
+    setOperationInProgress(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showToast('Purchase request sent!', 'success');
+    } catch (error) {
+      showToast('Failed to send purchase request', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
+
+  const deletePost = useCallback(async (postId) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    setOperationInProgress(true);
+    try {
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      showToast('Post deleted successfully', 'success');
+    } catch (error) {
+      showToast('Failed to delete post', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
+
+  const deleteForumPost = useCallback(async (postId) => {
+    if (!confirm('Are you sure you want to delete this forum post?')) return;
+    
+    setOperationInProgress(true);
+    try {
+      setForumPosts(prev => prev.filter(post => post.id !== postId));
+      showToast('Forum post deleted successfully', 'success');
+    } catch (error) {
+      showToast('Failed to delete forum post', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
+
+  const handlePostSubmit = useCallback(async (formData) => {
+    setOperationInProgress(true);
+    try {
+      const newPost = {
+        id: Date.now().toString(),
+        item: {
+          title: formData.title,
+          description: formData.description,
+          category: selectedCategory,
+          quantity: formData.quantity || 1,
+          isSelling: isSelling,
+          price: formData.price || 0,
+          tradeFor: formData.tradeFor || '',
+          userId: user?.uid || 'current-user',
+          isAvailable: true,
+          createdAt: new Date(),
+          images: postImages,
+          nickname: user?.displayName || user?.nickname || 'Anonymous',
+          zone: user?.zone || '1'
+        },
+        userData: {
+          username: user?.displayName || 'Anonymous',
+          photoURL: user?.photoURL || '',
+          location: user?.location || 'Unknown',
+          zone: user?.zone || '1',
+          role: user?.role || 'user',
+          emailVerified: user?.emailVerified || false,
+          nickname: user?.nickname || 'Anonymous'
+        },
+        likeCount: 0,
+        userLiked: false,
+        comments: []
+      };
+
+      setPosts(prev => [newPost, ...prev]);
+      setShowAddPostModal(false);
+      setPostImages([]);
+      setSelectedCategory('');
+      showToast('Post created successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to create post', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [isSelling, postImages, selectedCategory, user, showToast]);
+
+  const handleForumPostSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!newForumPost.title.trim() || !newForumPost.content.trim()) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
+
+    setOperationInProgress(true);
+    try {
+      const forumPost = {
+        id: Date.now().toString(),
+        post: {
+          title: newForumPost.title,
+          content: newForumPost.content,
+          category: newForumPost.category,
+          userId: user?.uid || 'current-user',
+          createdAt: new Date(),
+          nickname: user?.displayName || user?.nickname || 'Anonymous',
+          zone: user?.zone || '1'
+        },
+        userData: {
+          username: user?.displayName || 'Anonymous',
+          photoURL: user?.photoURL || '',
+          location: user?.location || 'Unknown',
+          zone: user?.zone || '1',
+          role: user?.role || 'user',
+          emailVerified: user?.emailVerified || false,
+          nickname: user?.nickname || 'Anonymous'
+        },
+        likeCount: 0,
+        userLiked: false,
+        comments: [],
+        createdAt: new Date()
+      };
+
+      setForumPosts(prev => [forumPost, ...prev]);
+      setNewForumPost({ title: '', content: '', category: 'general' });
+      setShowAddForumPostModal(false);
+      showToast('Forum post created successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to create forum post', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [newForumPost, user, showToast]);
+
+  const respondToTrade = useCallback(async (requestId, response, message = '') => {
+    setOperationInProgress(true);
+    try {
+      setTradeRequests(prev => prev.map(request => 
+        request.id === requestId 
+          ? { ...request, status: response, responseMessage: message }
+          : request
+      ));
+      showToast(`Trade ${response}`, 'success');
+    } catch (error) {
+      showToast('Failed to respond to trade', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
+
+  const submitTradeOffer = useCallback(async (offerData) => {
+    setOperationInProgress(true);
+    try {
+      const newTradeRequest = {
+        id: Date.now().toString(),
+        offeredItemId: offerData.offeredItemId,
+        requestedItemId: selectedPost.id,
+        buyerId: user?.uid || 'current-user',
+        sellerId: selectedPost.item.userId,
+        status: 'pending',
+        message: offerData.message,
+        createdAt: new Date(),
+        participants: [user?.uid || 'current-user', selectedPost.item.userId]
+      };
+
+      setTradeRequests(prev => [newTradeRequest, ...prev]);
+      setShowTradeOfferModal(false);
+      setSelectedPost(null);
+      showToast('Trade offer sent!', 'success');
+    } catch (error) {
+      showToast('Failed to send trade offer', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [selectedPost, user, showToast]);
+
+  const sendMessage = useCallback((message) => {
+    if (!message.trim() || !selectedChatUser) return;
+
+    const newMsg = {
       id: Date.now().toString(),
-      offeredItemId: offerData.offeredItemId,
-      requestedItemId: selectedPost.id,
-      buyerId: user?.uid || 'current-user',
-      sellerId: selectedPost.item.userId,
-      status: 'pending',
-      message: offerData.message,
-      createdAt: new Date(),
-      participants: [user?.uid || 'current-user', selectedPost.item.userId]
+      text: message,
+      senderId: user?.uid || 'current-user',
+      receiverId: selectedChatUser.id,
+      timestamp: new Date(),
+      read: false
     };
 
-    setTradeRequests(prev => [newTradeRequest, ...prev]);
-    setShowTradeOfferModal(false);
-    setSelectedPost(null);
-    showToast('Trade offer sent!', 'success');
-  } catch (error) {
-    showToast('Failed to send trade offer', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
+    setMessages(prev => [...prev, newMsg]);
+    setNewMessage('');
+  }, [selectedChatUser, user]);
 
-const sendMessage = (message) => {
-  if (!message.trim() || !selectedChatUser) return;
-
-  const newMsg = {
-    id: Date.now().toString(),
-    text: message,
-    senderId: user?.uid || 'current-user',
-    receiverId: selectedChatUser.id,
-    timestamp: new Date(),
-    read: false
-  };
-
-  setMessages(prev => [...prev, newMsg]);
-  setNewMessage('');
-};
-
-const clearChat = () => {
-  setMessages([]);
-};
-
-const deleteChat = (chatId) => {
-  setChatUsers(prev => prev.filter(chat => chat.id !== chatId));
-  if (selectedChatUser?.id === chatId) {
-    setSelectedChatUser(null);
+  const clearChat = useCallback(() => {
     setMessages([]);
-  }
-};
+  }, []);
 
-const markAsRead = (notificationId) => {
-  setNotifications(prev => prev.map(notif => 
-    notif.id === notificationId ? { ...notif, read: true } : notif
-  ));
-  setUnreadCount(prev => Math.max(0, prev - 1));
-};
+  const deleteChat = useCallback((chatId) => {
+    setChatUsers(prev => prev.filter(chat => chat.id !== chatId));
+    if (selectedChatUser?.id === chatId) {
+      setSelectedChatUser(null);
+      setMessages([]);
+    }
+  }, [selectedChatUser]);
 
-const markAllAsRead = () => {
-  setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
-  setUnreadCount(0);
-};
-
-const deleteNotification = (notificationId) => {
-  setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
-  const notification = notifications.find(n => n.id === notificationId);
-  if (notification && !notification.read) {
+  const markAsRead = useCallback((notificationId) => {
+    setNotifications(prev => prev.map(notif => 
+      notif.id === notificationId ? { ...notif, read: true } : notif
+    ));
     setUnreadCount(prev => Math.max(0, prev - 1));
-  }
-};
+  }, []);
 
-const saveProfileSettings = async (settings) => {
-  setOperationInProgress(true);
-  try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    showToast('Profile updated successfully!', 'success');
-    setShowSettingsModal(false);
-  } catch (error) {
-    showToast('Failed to update profile', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    setUnreadCount(0);
+  }, []);
 
-const startTour = () => {
-  setShowWelcomeModal(false);
-  showToast('Welcome to the platform!', 'info');
-};
+  const deleteNotification = useCallback((notificationId) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification && !notification.read) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  }, [notifications]);
 
-const showHelpArticles = () => {
-  setSelectedArticle(null);
-};
+  const saveProfileSettings = useCallback(async (settings) => {
+    setOperationInProgress(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showToast('Profile updated successfully!', 'success');
+      setShowSettingsModal(false);
+    } catch (error) {
+      showToast('Failed to update profile', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
 
-const showHelpArticleDetail = (article) => {
-  setSelectedArticle(article);
-};
+  const startTour = useCallback(() => {
+    setShowWelcomeModal(false);
+    showToast('Welcome to the platform!', 'info');
+  }, [showToast]);
 
-const backToHelpList = () => {
-  setSelectedArticle(null);
-};
+  const showHelpArticles = useCallback(() => {
+    setSelectedArticle(null);
+  }, []);
 
-const submitFeedback = async (feedback) => {
-  setOperationInProgress(true);
-  try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    showToast('Feedback submitted successfully!', 'success');
-  } catch (error) {
-    showToast('Failed to submit feedback', 'error');
-  } finally {
-    setOperationInProgress(false);
-  }
-};
+  const showHelpArticleDetail = useCallback((article) => {
+    setSelectedArticle(article);
+  }, []);
 
+  const backToHelpList = useCallback(() => {
+    setSelectedArticle(null);
+  }, []);
+
+  const submitFeedback = useCallback(async (feedback) => {
+    setOperationInProgress(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showToast('Feedback submitted successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to submit feedback', 'error');
+    } finally {
+      setOperationInProgress(false);
+    }
+  }, [showToast]);
 
   return (
-    <div className={styles.container}>
-      <Header
-        user={user}
-        unreadCount={unreadCount}
-        showDropdown={showDropdown}
-        setShowDropdown={setShowDropdown}
-        setShowNotificationsModal={setShowNotificationsModal}
-        setShowSettingsModal={setShowSettingsModal}
-        toggleMenu={() => setIsMenuOpen(!isMenuOpen)}
-        generateAvatar={generateAvatar}
-        svgToDataUrl={svgToDataUrl}
-        logout={logout}
-        showToast={showToast}
-        dropdownRef={dropdownRef}
-      />
+    <div className={styles.container} style={{flex: 1, flexDirection: 'column'}}>
+      <div style={{height: 40, width: '100%', backgroundColor: 'black'}}>
+        <Header
+          user={user}
+          unreadCount={unreadCount}
+          showDropdown={showDropdown}
+          setShowDropdown={setShowDropdown}
+          setShowNotificationsModal={setShowNotificationsModal}
+          setShowSettingsModal={setShowSettingsModal}
+          toggleMenu={() => setIsMenuOpen(!isMenuOpen)}
+          generateAvatar={generateAvatar}
+          svgToDataUrl={svgToDataUrl}
+          logout={logout}
+          showToast={showToast}
+          dropdownRef={dropdownRef}
+        />
+      </div>
       <Sidebar
         activeSection={activeSection}
         setActiveSection={setActiveSection}
