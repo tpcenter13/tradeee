@@ -112,7 +112,6 @@ export default function SignupPage() {
             const data = userData.data();
             const redirectPath = data.role === "admin" ? "/dashboard/admin" : "/dashboard/user";
             console.log("User authenticated, redirecting to:", redirectPath);
-            // Use replace instead of push to avoid adding to history stack
             await router.replace(redirectPath);
           } else {
             console.log("User document not found, waiting for creation");
@@ -224,7 +223,6 @@ export default function SignupPage() {
         createdAt: new Date().toISOString(),
       });
 
-      // Wait for auth state to persist
       await new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
           if (currentUser && currentUser.uid === user.uid) {
@@ -252,7 +250,6 @@ export default function SignupPage() {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Wait for auth state to persist
         await new Promise((resolve) => {
           const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser && currentUser.uid === user.uid) {
@@ -339,7 +336,7 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="right-section">
+        <div className="right-section" style={{ border: "2px solid red" }}> {/* Debug border */}
           <h2>Sign Up</h2>
           {error && <div className="error-message global-error">{error}</div>}
           <form onSubmit={handleSignup}>
