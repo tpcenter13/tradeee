@@ -16,7 +16,7 @@ export default function Home() {
         if (user.email === 'admintradeconnecta@gmail.com') {
           router.push('/dashboard/admin');
         } else {
-          router.push('/dashboard/user');
+          router.push('/dashboard/user/home');
         }
       } else {
         // User is signed out, redirect to login

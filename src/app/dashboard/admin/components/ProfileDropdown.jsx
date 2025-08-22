@@ -41,16 +41,16 @@ const ProfileDropdown = () => {
         localStorage.removeItem('adminToken');
         
         // Redirect to home page
-        window.location.href = '/';
+        window.location.href = '/login';
       } else {
         console.error('Logout failed');
         // Still redirect to home even if API call fails
-        window.location.href = '/';
+        window.location.href = '/login';
       }
     } catch (error) {
       console.error('Error during logout:', error);
       // Still redirect to home even if there's an error
-      window.location.href = '/';
+      window.location.href = '/login';
     }
   };
 

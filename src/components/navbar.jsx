@@ -82,7 +82,7 @@ export default function Navbar() {
                   Dashboard
                 </Link>
               )}
-              <button onClick={handleLogout} className="navbar-link">Logout</button>
+              {/* <button onClick={handleLogout} className="navbar-link">Logout</button> */}
             </>
           )}
         </div>

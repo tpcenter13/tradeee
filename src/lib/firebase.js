@@ -1,5 +1,4 @@
 // src/lib/firebase.js
-"use client";
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -16,13 +15,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-console.log("Firebase Config:", firebaseConfig);
-console.log("Existing apps:", getApps());
-
 let app;
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  console.log("Firebase app initialized:", app.name);
 } catch (error) {
   console.error("Firebase initialization error:", error);
 }
@@ -31,5 +26,3 @@ export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 export const realtimeDb = app ? getDatabase(app) : null;
 export const storage = app ? getStorage(app) : null;
-
-console.log("Auth instance:", auth);

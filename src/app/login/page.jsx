@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from 'next/link';
 import Head from 'next/head';
 import { useAppActions, useAppState, auth } from '../context/AppContext';
+import { userService } from '@/lib/firebaseService';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,37 +17,23 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   // Get state and actions from context
-  const { isAuthenticated, user } = useAppState();
   const { setUser, setToken, setError: setGlobalError, clearError } = useAppActions();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const redirectPath = user.email === 'admintradeconnecta@gmail.com' 
-        ? '/dashboard/admin' 
-        : '/dashboard/user';
-      router.push(redirectPath);
-    }
-  }, [isAuthenticated, user, router]);
-
+  // Handle logout redirect (when user comes from logout)
   useEffect(() => {
     const handleSignOut = async () => {
       try {
         await auth.signOut();
-        // Context will handle clearing state via onAuthStateChanged
       } catch (error) {
         console.error('Error during sign out:', error);
         setGlobalError(error.message);
       }
     };
 
-    // Handle logout redirect
     const urlParams = new URLSearchParams(window.location.search);
     const fromLogout = urlParams.get('fromLogout') === 'true';
-    
     if (fromLogout) {
       handleSignOut();
-      // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [setGlobalError]);
@@ -55,51 +42,36 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    clearError(); // Clear any global errors
+    clearError();
 
     try {
-      // Sign in with Firebase
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Get ID token
-      const idToken = await user.getIdToken();
-      
-      // Update global state (this will be handled by the context's auth listener)
-      // But we can also manually update to ensure immediate state change
-      setUser(user);
+      // Firebase login
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = result.user;
+
+      const idToken = await loggedInUser.getIdToken();
+      setUser(loggedInUser);
       setToken(idToken);
-      
-      // Redirect based on user role
-      if (user.email === 'admintradeconnecta@gmail.com') {
+
+      // Save or update user profile
+      await userService.createUserProfile(loggedInUser.uid, {
+        email: loggedInUser.email,
+        username: loggedInUser.displayName || email.split('@')[0],
+        role: loggedInUser.email === 'admintradeconnecta@gmail.com' ? 'admin' : 'user',
+        photoURL: loggedInUser.photoURL || '',
+        zone: 'Zone 1' // change dynamically if needed
+      });
+
+      // ✅ Redirect immediately after login
+      if (loggedInUser.email === 'admintradeconnecta@gmail.com') {
         router.push('/dashboard/admin');
       } else {
-        router.push('/dashboard/user');
+        router.push('/dashboard/user/home');
       }
-      
+
     } catch (error) {
       console.error("Login error:", error);
-      let errorMessage = "Login failed. Please try again.";
-      
-      switch (error.code) {
-        case "auth/invalid-email":
-          errorMessage = "Invalid email address";
-          break;
-        case "auth/user-not-found":
-          errorMessage = "No account found with this email";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Incorrect password";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Too many attempts. Please try again later.";
-          break;
-        case "auth/invalid-credential":
-          errorMessage = "Invalid email or password";
-          break;
-      }
-      
-      setError(errorMessage);
-      setGlobalError(errorMessage);
+      setError(error.message || "Failed to login. Please try again.");
     } finally {
       setLoading(false);
     }
