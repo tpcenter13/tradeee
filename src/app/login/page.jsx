@@ -17,76 +17,65 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   // Get state and actions from context
-  const { isAuthenticated, user } = useAppState();
   const { setUser, setToken, setError: setGlobalError, clearError } = useAppActions();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const redirectPath = user.email === 'admintradeconnecta@gmail.com' 
-        ? '/dashboard/admin' 
-        : '/dashboard/user/home';
-      router.push(redirectPath);
-    }
-  }, [isAuthenticated, user, router]);
-
+  // Handle logout redirect (when user comes from logout)
   useEffect(() => {
     const handleSignOut = async () => {
       try {
         await auth.signOut();
-        // Context will handle clearing state via onAuthStateChanged
       } catch (error) {
         console.error('Error during sign out:', error);
         setGlobalError(error.message);
       }
     };
 
-    // Handle logout redirect
     const urlParams = new URLSearchParams(window.location.search);
     const fromLogout = urlParams.get('fromLogout') === 'true';
-    
     if (fromLogout) {
       handleSignOut();
-      // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [setGlobalError]);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
-  clearError();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    clearError();
 
-  try {
-    const { user } = await signInWithEmailAndPassword(auth, email, password);
-    const idToken = await user.getIdToken();
-    setUser(user);
-    setToken(idToken);
+    try {
+      // Firebase login
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = result.user;
 
-    // Save or update user profile
-    await userService.createUserProfile(user.uid, {
-      email: user.email,
-      username: user.displayName || email.split('@')[0],
-      role: user.email === 'admintradeconnecta@gmail.com' ? 'admin' : 'user',
-      photoURL: user.photoURL || '',
-      zone: 'Zone 1' // Replace or update dynamically if needed
-    });
+      const idToken = await loggedInUser.getIdToken();
+      setUser(loggedInUser);
+      setToken(idToken);
 
-    // Redirect
-    if (user.email === 'admintradeconnecta@gmail.com') {
-      router.push('/dashboard/admin');
-    } else {
-      router.push('/dashboard/user/home');
+      // Save or update user profile
+      await userService.createUserProfile(loggedInUser.uid, {
+        email: loggedInUser.email,
+        username: loggedInUser.displayName || email.split('@')[0],
+        role: loggedInUser.email === 'admintradeconnecta@gmail.com' ? 'admin' : 'user',
+        photoURL: loggedInUser.photoURL || '',
+        zone: 'Zone 1' // change dynamically if needed
+      });
+
+      // ✅ Redirect immediately after login
+      if (loggedInUser.email === 'admintradeconnecta@gmail.com') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard/user/home');
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.message || "Failed to login. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    console.error("Login error:", error);
-    // ...your error handling
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <>  

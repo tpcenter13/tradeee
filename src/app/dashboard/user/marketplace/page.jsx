@@ -303,6 +303,7 @@ export default function MarketPlace() {
                   <span>{getDisplayLocation(product.seller)}</span> •
                   <span>{formatDate(product.createdAt)}</span>
                 </div>
+                <span>Location: {user?.zone}</span>
               </div>
 
               {/* Management Footer (Delete only, no Edit) */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import styles from "../app/dashboard/user/page.module.css";
+import { useAppState } from "@/app/context/AppContext";
 
 export default function AddPostModal({
   isSelling,
@@ -19,14 +20,13 @@ export default function AddPostModal({
 }) {
   const [loading, setLoading] = useState(false);
 
+ const { user } = useAppState(); // 👈 grab merged user with zone
+
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
       if (!user) {
         showToast("Please log in to create a post");
         setShowAddPostModal(false);
@@ -62,13 +62,12 @@ export default function AddPostModal({
           uid: user.uid,
           email: user.email,
         },
+        zone: user.zone, // ✅ coming directly from context
       };
 
       const res = await fetch("/api/postItem", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
       });
 

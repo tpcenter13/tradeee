@@ -269,8 +269,9 @@ export default function HomeFeed() {
                   <span>{getDisplayLocation(product.seller)}</span> •
                   <span>{formatDate(product.createdAt)}</span>
                 </div>
+                  <span className="text-xs text-gray-600">Location: {product.zone}</span>
               </div>
-
+             
               {/* Footer */}
               <div className="flex justify-between border-t border-gray-200 px-3 py-2 text-xs text-gray-700">
                 <span>❤️ 0</span>

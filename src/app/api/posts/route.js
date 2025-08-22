@@ -36,6 +36,7 @@ export async function GET(req) {
         price: data.price,
         tradeFor: data.tradeFor,
         seller: data.seller,
+        zone: data.zone,
         createdAt: data.createdAt?.toDate?.() || new Date(), // Convert Firestore timestamp
       });
     });

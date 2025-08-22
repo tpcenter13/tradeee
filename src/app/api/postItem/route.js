@@ -4,10 +4,10 @@ import { collection, addDoc, Timestamp } from "firebase/firestore";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { title, description, category, quantity, images, isSelling, price, tradeFor, seller } = body;
+    const { title, description, category, quantity, images, isSelling, price, tradeFor, seller, zone } = body;
 
     // Validation
-    if (!title || !description || !category || !quantity || !images || images.length < 3 || !seller) {
+    if (!title || !description || !zone || !category || !quantity || !images || images.length < 3 || !seller) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
     }
 
@@ -22,6 +22,7 @@ export async function POST(req) {
       tradeFor: !isSelling ? tradeFor : null,
       createdAt: Timestamp.now(),
       seller,
+      zone,
     };
 
     const docRef = await addDoc(collection(db, "posts"), newPost);
