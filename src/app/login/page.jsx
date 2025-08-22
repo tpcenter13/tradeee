@@ -1,43 +1,10 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from '@/lib/firebase'; 
+import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from 'next/link';
 import Head from 'next/head';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-
-
-async function addPost(title, description, userId) {
-  try {
-    const docRef = await addDoc(collection(firestore, "posts"), {
-      title,
-      description,
-      userId,
-      createdAt: serverTimestamp(),
-    });
-    console.log("Document written with ID: ", docRef.id);
-    return docRef.id;
-  } catch (e) {
-    console.error("Error adding document: ", e);
-    throw e;
-  }
-}
+import { useAppActions, useAppState, auth } from '../context/AppContext';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,67 +15,65 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
- 
+  // Get state and actions from context
+  const { isAuthenticated, user } = useAppState();
+  const { setUser, setToken, setError: setGlobalError, clearError } = useAppActions();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const redirectPath = user.email === 'admintradeconnecta@gmail.com' 
+        ? '/dashboard/admin' 
+        : '/dashboard/user';
+      router.push(redirectPath);
+    }
+  }, [isAuthenticated, user, router]);
+
   useEffect(() => {
     const handleSignOut = async () => {
       try {
         await auth.signOut();
-        
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Context will handle clearing state via onAuthStateChanged
       } catch (error) {
         console.error('Error during sign out:', error);
+        setGlobalError(error.message);
       }
     };
 
-   
+    // Handle logout redirect
     const urlParams = new URLSearchParams(window.location.search);
     const fromLogout = urlParams.get('fromLogout') === 'true';
     
     if (fromLogout) {
       handleSignOut();
-     
+      // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
+  }, [setGlobalError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    clearError(); // Clear any global errors
 
     try {
-     
+      // Sign in with Firebase
       const { user } = await signInWithEmailAndPassword(auth, email, password);
       
-    
+      // Get ID token
       const idToken = await user.getIdToken();
       
-     
-      const cookieOptions = {
-        path: '/',
-        maxAge: 3600, 
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: false 
-      };
+      // Update global state (this will be handled by the context's auth listener)
+      // But we can also manually update to ensure immediate state change
+      setUser(user);
+      setToken(idToken);
       
-      
-      const cookieString = (name, value) => {
-        return `${name}=${value}; ` +
-               `path=${cookieOptions.path}; ` +
-               `max-age=${cookieOptions.maxAge}; ` +
-               `samesite=${cookieOptions.sameSite}` +
-               (cookieOptions.secure ? '; secure' : '');
-      };
-      
-    
-      document.cookie = cookieString('token', idToken);
-      document.cookie = cookieString('userEmail', user.email);
-      
+      // Redirect based on user role
       if (user.email === 'admintradeconnecta@gmail.com') {
-        window.location.href = '/dashboard/admin';
+        router.push('/dashboard/admin');
       } else {
-        window.location.href = '/dashboard/user';
+        router.push('/dashboard/user');
       }
       
     } catch (error) {
@@ -128,16 +93,20 @@ export default function LoginPage() {
         case "auth/too-many-requests":
           errorMessage = "Too many attempts. Please try again later.";
           break;
+        case "auth/invalid-credential":
+          errorMessage = "Invalid email or password";
+          break;
       }
       
       setError(errorMessage);
+      setGlobalError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
+    <>  
       <Head>
         <title>TradeConnect - Login</title>
         <meta charSet="UTF-8" />
@@ -212,7 +181,6 @@ export default function LoginPage() {
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  
                 />
                 Remember me
               </label>

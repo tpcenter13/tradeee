@@ -1,6 +1,7 @@
 
 import Navbar from '@/components/navbar';
 import '../styles/globals.css'; // kung nasa src/styles
+import { AppProvider } from './context/AppContext';
 
 
 export const metadata = {
@@ -12,8 +13,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <Navbar/>
-        <main>{children}</main>
+        <AppProvider>
+          <Navbar/>
+          <main>{children}</main>
+        </AppProvider>
       </body>
     </html>
   );

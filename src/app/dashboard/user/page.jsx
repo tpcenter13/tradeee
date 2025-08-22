@@ -3,23 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import { removeFdProcessedId } from '@/utils/removeFdProcessedId';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
+import { useAppActions, useAppState } from '@/app/context/AppContext';
 
 export default function UserPage() {
   
-  const [user, setUser] = useState({
-    uid: 'Katkai',
-    email: 'maricaracaratao11@gmail.com',
-    displayName: 'Katkai',
-    photoURL: '',
-    location: 'Zone 5, Barangay Bulihan',
-    gcash: '',
-    contact: '',
-    bio: '',
-    zone: '5',
-    role: 'user',
-    emailVerified: true,
-    nickname: 'Katkai User'
-  });
+  const { user, isAuthenticated, userRole } = useAppState();
+  const { addPost, logout } = useAppActions();
   
   const [activeSection, setActiveSection] = useState('home');
   const [activeProfileTab, setActiveProfileTab] = useState('posts');
@@ -1010,10 +999,11 @@ export default function UserPage() {
                         const { signOut } = await import('firebase/auth');
                         const { auth } = await import('@/lib/firebase');
                         await signOut(auth);
+                        logout();
                         
                         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                         
-                        window.location.href = '/';
+                        window.location.href = '/login';
                       } catch (error) {
                         console.error('Error signing out:', error);
                         showToast('Failed to sign out', 'error');
