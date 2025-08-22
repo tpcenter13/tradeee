@@ -9,13 +9,12 @@ import Link from 'next/link';
 import Head from 'next/head';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCxaOGeOvHwS5dnPHRTpw3Lwn2surjXP1E",
-  authDomain: "tradeconnect-3c728.firebaseapp.com",
-  projectId: "tradeconnect-3c728",
-  storageBucket: "tradeconnect-3c728.appspot.com",
-  messagingSenderId: "299665603548",
-  appId: "1:299665603548:web:9ff10af44cd41605382d19",
-  databaseURL: "https://tradeconnect-3c728-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 
