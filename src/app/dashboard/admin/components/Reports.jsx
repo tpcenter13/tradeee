@@ -1,42 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye, X, AlertTriangle, Check, Printer, Download, Filter } from 'lucide-react';
 
 const Reports = () => {
-  const [reports, setReports] = useState([
-    {
-      id: 1,
-      reportedUser: { name: 'Ela', email: 'ela@example.com', zone: 'Zone 1' },
-      reportedBy: { name: 'Ana', email: 'ana@example.com' },
-      reason: 'Scam/Fraud',
-      date: '2025-08-18',
-      status: 'Pending',
-      message: 'User asked for payment but never delivered the item.',
-      priority: 'High'
-    },
-    {
-      id: 2,
-      reportedUser: { name: 'Carlo', email: 'carlo@example.com', zone: 'Zone 3' },
-      reportedBy: { name: 'Jen', email: 'jen@example.com' },
-      reason: 'Rude Behavior',
-      date: '2025-08-18',
-      status: 'Resolved',
-      message: 'User was very aggressive in messages.',
-      priority: 'Medium'
-    },
-    {
-      id: 3,
-      reportedUser: { name: 'Leo', email: 'leo@example.com', zone: 'Zone 5' },
-      reportedBy: { name: 'Mark', email: 'mark@example.com' },
-      reason: 'No Response',
-      date: '2025-08-18',
-      status: 'Pending',
-      message: 'User has not responded to messages for over a week.',
-      priority: 'Low'
-    },
-  ]);
-
+  const [reports, setReports] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [reasonFilter, setReasonFilter] = useState('All');
@@ -44,6 +12,54 @@ const Reports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch reports from API
+const fetchReports = async () => {
+  setIsLoading(true);
+  setError(null);
+  try {
+    const params = new URLSearchParams();
+    if (statusFilter !== 'All') params.append('status', statusFilter);
+    const response = await fetch(`/api/getReport?${params.toString()}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch reports');
+    }
+
+    // Map API response - rely on API transformation
+    const formattedReports = data.reports.map(report => ({
+      id: report.id,
+      reportedUser: {
+        name: report.reportedUser.name,
+        email: report.reportedUser.email,
+        zone: report.reportedUser.zone
+      },
+      reportedBy: {
+        name: report.reportedBy.name,
+        email: report.reportedBy.email
+      },
+      reason: report.reason,
+      date: report.date,
+      status: report.status,
+      message: report.message,
+      priority: report.priority
+    }));
+
+    setReports(formattedReports);
+  } catch (err) {
+    setError(err.message);
+    console.error('Error fetching reports:', err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  useEffect(() => {
+    fetchReports();
+  }, [statusFilter]);
 
   const filteredReports = reports.filter(report => {
     const matchesSearch = 
@@ -51,11 +67,10 @@ const Reports = () => {
       report.reportedBy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.reportedUser.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'All' || report.status === statusFilter;
     const matchesReason = reasonFilter === 'All' || report.reason === reasonFilter;
     const matchesPriority = priorityFilter === 'All' || report.priority === priorityFilter;
     
-    return matchesSearch && matchesStatus && matchesReason && matchesPriority;
+    return matchesSearch && matchesReason && matchesPriority;
   });
 
   const handleViewReport = (report) => {
@@ -63,27 +78,56 @@ const Reports = () => {
     setShowModal(true);
   };
 
-  const handleResolve = (id) => {
-    setReports(reports.map(report => 
-      report.id === id ? { ...report, status: 'Resolved' } : report
-    ));
-    setActionMessage('Report marked as resolved successfully');
-    setShowModal(false);
-    setTimeout(() => setActionMessage(''), 3000);
+  const handleResolve = async (id) => {
+    try {
+      // Implement API call to update report status
+      await fetch(`/api/reports/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Resolved' })
+      });
+      setReports(reports.map(report => 
+        report.id === id ? { ...report, status: 'Resolved' } : report
+      ));
+      setActionMessage('Report marked as resolved successfully');
+      setShowModal(false);
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (err) {
+      setError('Failed to resolve report');
+      console.error('Error resolving report:', err);
+    }
   };
 
-  const handleDeleteUser = (id) => {
-    setReports(reports.filter(report => report.id !== id));
-    setActionMessage('User has been removed from the system');
-    setShowModal(false);
-    setTimeout(() => setActionMessage(''), 3000);
+  const handleDeleteUser = async (id) => {
+    try {
+      // Implement API call to delete report
+      await fetch(`/api/reports/${id}`, {
+        method: 'DELETE'
+      });
+      setReports(reports.filter(report => report.id !== id));
+      setActionMessage('User has been removed from the system');
+      setShowModal(false);
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (err) {
+      setError('Failed to delete user');
+      console.error('Error deleting user:', err);
+    }
   };
 
-  const handleWarnUser = (id) => {
-    const report = reports.find(r => r.id === id);
-    setActionMessage(`Warning notification sent to ${report.reportedUser.name}`);
-    setShowModal(false);
-    setTimeout(() => setActionMessage(''), 3000);
+  const handleWarnUser = async (id) => {
+    try {
+      const report = reports.find(r => r.id === id);
+      // Implement API call to send warning
+      await fetch(`/api/getReport/${id}/warn`, {
+        method: 'POST'
+      });
+      setActionMessage(`Warning notification sent to ${report.reportedUser.name}`);
+      setShowModal(false);
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (err) {
+      setError('Failed to send warning');
+      console.error('Error sending warning:', err);
+    }
   };
 
   const handlePrint = () => {
@@ -555,6 +599,7 @@ const Reports = () => {
               <button 
                 onClick={handlePrint}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                disabled={isLoading}
               >
                 <Printer className="w-4 h-4 mr-2" />
                 Print Report
@@ -571,6 +616,13 @@ const Reports = () => {
           <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 flex items-center">
             <Check className="w-5 h-5 mr-2" />
             {actionMessage}
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            {error}
           </div>
         )}
         
@@ -643,7 +695,16 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredReports.length > 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="text-lg font-medium">Loading reports...</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredReports.length > 0 ? (
                   filteredReports.map((report) => (
                     <tr key={report.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
@@ -654,7 +715,7 @@ const Reports = () => {
                             </span>
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">{report.reportedUser.name}</div>
+                           
                             <div className="text-sm text-gray-500">{report.reportedUser.email}</div>
                             <div className="text-xs text-gray-400">{report.reportedUser.zone}</div>
                           </div>
@@ -782,19 +843,13 @@ const Reports = () => {
                     <div className="bg-red-50 rounded-lg p-4">
                       <div className="text-sm font-medium text-red-800 mb-3">👤 Reported User</div>
                       <div className="space-y-2">
-                        <div><span className="font-medium">Name:</span> {selectedReport.reportedUser.name}</div>
+                        
                         <div><span className="font-medium">Email:</span> {selectedReport.reportedUser.email}</div>
-                        <div><span className="font-medium">Zone:</span> {selectedReport.reportedUser.zone}</div>
+                     
                       </div>
                     </div>
                     
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="text-sm font-medium text-blue-800 mb-3">🧑‍💼 Reported By</div>
-                      <div className="space-y-2">
-                        <div><span className="font-medium">Name:</span> {selectedReport.reportedBy.name}</div>
-                        <div><span className="font-medium">Email:</span> {selectedReport.reportedBy.email}</div>
-                      </div>
-                    </div>
+                   
                   </div>
                 </div>
                 
